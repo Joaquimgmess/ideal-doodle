@@ -137,6 +137,11 @@ curl http://localhost:8000/api/v1/pedidos \
 
 ### Endpoints disponíveis
 
+todo! vincular com https://doc-hub-emergencia-api.vercel.app/docs/endpoints
+
+todo! incorporar estas rotas
+todo! importar rotas `rust`
+
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
 | `GET` | `/api/v1/pedidos` | API Key | Lista pedidos de socorro |
