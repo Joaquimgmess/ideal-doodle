@@ -69,7 +69,7 @@ async def list_pedidos(
 
 
 @router.post("/pedidos", status_code=201)
-async def create_pedido(session: SessionDep, data: PedidoCreate) -> Any:
+async def create_pedido(session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate) -> Any:
     item = Pedido(
         id=_user_id("pedido", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -112,7 +112,7 @@ async def list_voluntarios(
 
 
 @router.post("/voluntarios", status_code=201)
-async def create_voluntario(session: SessionDep, data: VoluntarioCreate) -> Any:
+async def create_voluntario(session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate) -> Any:
     item = Voluntario(
         id=_user_id("voluntario", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -155,7 +155,7 @@ async def list_pontos(
 
 
 @router.post("/pontos", status_code=201)
-async def create_ponto(session: SessionDep, data: PontoAjudaCreate) -> Any:
+async def create_ponto(session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate) -> Any:
     item = PontoAjuda(
         id=_user_id("ponto", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -201,7 +201,7 @@ async def list_pets(
 
 
 @router.post("/pets", status_code=201)
-async def create_pet(session: SessionDep, data: PetCreate) -> Any:
+async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Any:
     item = Pet(
         id=_user_id("pet", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -244,7 +244,7 @@ async def list_feed(
 
 
 @router.post("/feed", status_code=201)
-async def create_feed_item(session: SessionDep, data: FeedItemCreate) -> Any:
+async def create_feed_item(session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate) -> Any:
     item = FeedItem(
         id=_user_id("feed"),
         portal_id=_USER_PORTAL_ID,
@@ -284,7 +284,7 @@ async def list_outros(
 
 
 @router.post("/outros", status_code=201)
-async def create_outro(session: SessionDep, data: OutroCreate) -> Any:
+async def create_outro(session: SessionDep, api_key: ApiKeyDep, data: OutroCreate) -> Any:
     item = Outro(
         id=_user_id("outro"),
         portal_id=_USER_PORTAL_ID,
