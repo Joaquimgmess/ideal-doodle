@@ -1,0 +1,164 @@
+@baseUrl = http://localhost:8000
+@email = dev@teste.com
+@password = 1234568888
+@apiKey = COLE_SUA_API_KEY_AQUI
+
+###############################################
+### 1️⃣ Criar conta de desenvolvedor
+###############################################
+
+POST {{baseUrl}}/api/v1/users/signup
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "full_name": "Dev Teste"
+}
+
+###############################################
+### 2️⃣ Login (retorna JWT)
+###############################################
+# @name login
+POST {{baseUrl}}/api/v1/login/access-token
+Content-Type: application/x-www-form-urlencoded
+
+username={{email}}&password={{password}}
+
+###############################################
+### 3️⃣ Criar API Key (usar JWT aqui)
+###############################################
+
+# @name app
+POST {{baseUrl}}/api/v1/api-keys
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
+
+{
+  "name": "meu-app",
+  "description": "App de integração"
+}
+
+###############################################
+### 4️⃣ Ve o registro criado
+###############################################
+
+### VE
+GET {{baseUrl}}/api/v1/api-keys/me
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+###############################################
+### 4️⃣ PEDIDOS
+###############################################
+
+### Criar pedido
+POST {{baseUrl}}/api/v1/pedidos
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "titulo": "Preciso de água",
+  "descricao": "Família com 4 pessoas",
+  "cidade": "Juiz de Fora",
+  "categoria": "agua"
+}
+
+### Listar pedidos
+GET {{baseUrl}}/api/v1/pedidos?skip=0&limit=100&cidade=Juiz%20de%20Fora
+X-API-Key: {{apiKey}}
+
+###############################################
+### 5️⃣ VOLUNTÁRIOS
+###############################################
+
+### Criar voluntário
+POST {{baseUrl}}/api/v1/voluntarios
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "nome": "Carlos Silva",
+  "telefone": "32999999999",
+  "cidade": "Juiz de Fora"
+}
+
+### Listar voluntários
+GET {{baseUrl}}/api/v1/voluntarios?skip=0&limit=100
+X-API-Key: {{apiKey}}
+
+###############################################
+### 6️⃣ PONTOS DE AJUDA
+###############################################
+
+### Criar ponto
+POST {{baseUrl}}/api/v1/pontos
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "nome": "Igreja Central",
+  "endereco": "Rua A, 123",
+  "cidade": "Juiz de Fora"
+}
+
+### Listar pontos
+GET {{baseUrl}}/api/v1/pontos?skip=0&limit=100
+X-API-Key: {{apiKey}}
+
+###############################################
+### 7️⃣ PETS
+###############################################
+
+### Criar pet
+POST {{baseUrl}}/api/v1/pets
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "nome": "Rex",
+  "status": "perdido",
+  "cidade": "Juiz de Fora"
+}
+
+### Listar pets
+GET {{baseUrl}}/api/v1/pets?skip=0&limit=100
+X-API-Key: {{apiKey}}
+
+###############################################
+### 8️⃣ FEED
+###############################################
+
+### Criar item no feed
+POST {{baseUrl}}/api/v1/feed
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "titulo": "Alerta de chuva forte",
+  "conteudo": "Evitar áreas alagadas",
+  "cidade": "Juiz de Fora"
+}
+
+### Listar feed
+GET {{baseUrl}}/api/v1/feed?skip=0&limit=100
+X-API-Key: {{apiKey}}
+
+###############################################
+### 9️⃣ OUTROS
+###############################################
+
+### Criar item
+POST {{baseUrl}}/api/v1/outros
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "tipo": "contato",
+  "titulo": "Defesa Civil",
+  "descricao": "Telefone 199"
+}
+
+### Listar outros
+GET {{baseUrl}}/api/v1/outros?skip=0&limit=100
+X-API-Key: {{apiKey}}
