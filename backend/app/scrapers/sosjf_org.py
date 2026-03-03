@@ -2,7 +2,7 @@ from app.scrapers.base import BaseScraper, ScraperResult
 
 
 class SosJfOrgScraper(BaseScraper):
-    portal_id = "sosjf_org"
+    portal_id = "06-sosjf-org"
     portal_name = "SOS JF (.org)"
     base_url = "https://sosjf.org"
 

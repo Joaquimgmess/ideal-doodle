@@ -6,7 +6,7 @@ from app.scrapers.base import BaseScraper, ScraperResult
 
 
 class CidadeQueCuidaScraper(BaseScraper):
-    portal_id = "09"
+    portal_id = "09-cidade-que-cuida"
     portal_name = "Cidade que Cuida"
     base_url = "https://www.cidadequecuida.com.br"
 

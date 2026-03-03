@@ -147,7 +147,7 @@ def _extract_pontos_from_dom(dom_text: str, cidade: str) -> list[dict[str, Any]]
 
 
 class MinasEmergenciaScraper(BaseScraper):
-    portal_id: str = "minas_emergencia"
+    portal_id: str = "02-minas-emergencia"
     portal_name: str = "Minas Emergência"
     base_url: str = "https://minas-emergencia.com"
 

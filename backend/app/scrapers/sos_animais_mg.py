@@ -18,7 +18,7 @@ SELECT_FIELDS = (
 
 
 class SosAnimaisMgScraper(BaseScraper):
-    portal_id = "sos_animais_mg"
+    portal_id = "03-sos-animais-mg"
     portal_name = "SOS Animais MG"
     base_url = "https://sosanimaismg.codeheroes.com.br"
 

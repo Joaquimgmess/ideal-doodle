@@ -5,6 +5,7 @@ IDs seguem o padrão: portal_id:cidade:raw_id
 """
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from app.schemas.normalized import (
@@ -169,7 +170,7 @@ def _sos_animais_mg(r: ScraperResult) -> NormalizedResult:
     return nr
 
 
-_NORMALIZERS["sos_animais_mg"] = _sos_animais_mg
+_NORMALIZERS["03-sos-animais-mg"] = _sos_animais_mg
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +271,7 @@ def _sosjf_org(r: ScraperResult) -> NormalizedResult:
     return nr
 
 
-_NORMALIZERS["sosjf_org"] = _sosjf_org
+_NORMALIZERS["06-sosjf-org"] = _sosjf_org
 
 
 # ---------------------------------------------------------------------------
@@ -486,7 +487,7 @@ def _cidade_que_cuida(r: ScraperResult) -> NormalizedResult:
     return nr
 
 
-_NORMALIZERS["09"] = _cidade_que_cuida
+_NORMALIZERS["09-cidade-que-cuida"] = _cidade_que_cuida
 
 
 # ---------------------------------------------------------------------------
@@ -520,7 +521,7 @@ def _minas_emergencia(r: ScraperResult) -> NormalizedResult:
     return nr
 
 
-_NORMALIZERS["minas_emergencia"] = _minas_emergencia
+_NORMALIZERS["02-minas-emergencia"] = _minas_emergencia
 
 
 # ---------------------------------------------------------------------------
@@ -626,7 +627,7 @@ def _ajuda_imediata(r: ScraperResult) -> NormalizedResult:
             nr.pedidos.append(Pedido(
                 id=f"{pid}:jf:{raw_id}",
                 **base,
-                titulo=item.get("categoria"),
+                titulo=item.get("descricao") or item.get("categoria"),
                 descricao=item.get("descricao"),
                 categoria=item.get("categoria"),
                 status=item.get("status"),
@@ -803,8 +804,9 @@ def _interdicoes_jf(r: ScraperResult) -> NormalizedResult:
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
     base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
 
-    for i, item in enumerate(r.data.get("interdicoes", [])):
-        raw_id = str(i)
+    for item in r.data.get("interdicoes", []):
+        key = f"{item.get('Endereco','')}:{item.get('Data_Registro','')}:{item.get('Hora_registro','')}"
+        raw_id = hashlib.md5(key.encode()).hexdigest()[:8]
         status = item.get("Status", "")
         endereco = item.get("Endereco") or ""
         zona = item.get("Zona") or ""
