@@ -44,17 +44,18 @@ class SosJfOrgScraper(BaseScraper):
         )
 
         try:
-            alerts = await self.get_alerts()
-            result.data["alerts"] = alerts
+            items = await self.get_alerts_and_news()
+            result.data["alerts"] = sorted(
+                [i for i in items if i.get("id", "").startswith("alert-")],
+                key=lambda x: x.get("date", ""), reverse=True,
+            )
+            result.data["news"] = sorted(
+                [i for i in items if i.get("id", "").startswith("news-")],
+                key=lambda x: x.get("date", ""), reverse=True,
+            )
         except Exception as exc:
-            result.errors.append(f"alerts: {exc}")
+            result.errors.append(f"alerts_news: {exc}")
             result.data["alerts"] = []
-
-        try:
-            news = await self.get_news()
-            result.data["news"] = news
-        except Exception as exc:
-            result.errors.append(f"news: {exc}")
             result.data["news"] = []
 
         try:

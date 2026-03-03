@@ -41,7 +41,7 @@ class Voluntario(BaseItem):
 
 class PontoAjuda(BaseItem):
     nome: str | None = None
-    tipo: str | None = None       # abrigo | coleta | doacao | entidade | abrigo_animal
+    tipo: str | None = None       # abrigo | coleta | doacao | entidade | abrigo_animal | ponto
     descricao: str | None = None
     endereco: str | None = None
     cidade: str | None = None
@@ -67,7 +67,7 @@ class Pet(BaseItem):
 
 
 class FeedItem(BaseItem):
-    tipo: str                     # alerta | noticia | relatorio
+    tipo: str                     # alerta | noticia | relatorio | interdicao | transacao
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None
@@ -76,7 +76,7 @@ class FeedItem(BaseItem):
 
 
 class Outro(BaseItem):
-    tipo: str                     # contato_emergencia | link
+    tipo: str                     # contato_emergencia | link | pix | saldo | registro
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None

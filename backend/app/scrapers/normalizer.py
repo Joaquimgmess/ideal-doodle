@@ -34,8 +34,8 @@ def _first(d: dict[str, Any], *keys: str, default: Any = None) -> Any:
 
 
 def _geo(d: dict[str, Any]) -> tuple[float | None, float | None]:
-    lat = _first(d, "lat", "latitude")
-    lng = _first(d, "lng", "longitude", "lon")
+    lat = _first(d, "lat", "latitude", "Latitude")
+    lng = _first(d, "lng", "longitude", "lon", "Longitude")
     try:
         return (
             float(lat) if lat is not None else None,
@@ -86,9 +86,10 @@ def _emergencia_mg(r: ScraperResult) -> NormalizedResult:
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
     base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
 
-    for i, item in enumerate(r.data.get("emergency_contacts", [])):
+    for item in r.data.get("emergency_contacts", []):
+        raw_id = hashlib.md5((str(item.get("nome", "")) + str(item.get("telefone", ""))).encode()).hexdigest()[:8]
         nr.outros.append(Outro(
-            id=f"{pid}:jf:contato:{i}",
+            id=f"{pid}:jf:contato:{raw_id}",
             **base,
             tipo="contato_emergencia",
             titulo=item.get("nome"),
@@ -96,9 +97,10 @@ def _emergencia_mg(r: ScraperResult) -> NormalizedResult:
             raw=item,
         ))
 
-    for i, item in enumerate(r.data.get("help_links", [])):
+    for item in r.data.get("help_links", []):
+        raw_id = hashlib.md5((str(item.get("titulo", "")) + str(item.get("url", ""))).encode()).hexdigest()[:8]
         nr.outros.append(Outro(
-            id=f"{pid}:jf:link:{i}",
+            id=f"{pid}:jf:link:{raw_id}",
             **base,
             tipo="link",
             titulo=item.get("titulo"),
@@ -107,10 +109,11 @@ def _emergencia_mg(r: ScraperResult) -> NormalizedResult:
             raw=item,
         ))
 
-    for i, item in enumerate(r.data.get("animal_shelters", [])):
+    for item in r.data.get("animal_shelters", []):
+        raw_id = hashlib.md5(str(item.get("nome", "")).encode()).hexdigest()[:8]
         lat, lng = _geo(item)
         nr.pontos.append(PontoAjuda(
-            id=f"{pid}:jf:abrigo_animal:{i}",
+            id=f"{pid}:jf:abrigo_animal:{raw_id}",
             **base,
             tipo="abrigo_animal",
             nome=item.get("nome"),
@@ -121,9 +124,10 @@ def _emergencia_mg(r: ScraperResult) -> NormalizedResult:
             raw=item,
         ))
 
-    for i, item in enumerate(r.data.get("transport_volunteers", [])):
+    for item in r.data.get("transport_volunteers", []):
+        raw_id = hashlib.md5((str(item.get("nome", "")) + str(item.get("telefone", ""))).encode()).hexdigest()[:8]
         nr.voluntarios.append(Voluntario(
-            id=f"{pid}:jf:transporte:{i}",
+            id=f"{pid}:jf:transporte:{raw_id}",
             **base,
             nome=item.get("nome"),
             categoria="transporte",
@@ -208,10 +212,10 @@ def _sos_minas_growberry(r: ScraperResult) -> NormalizedResult:
             **base,
             nome=_first(item, "nome", "name"),
             descricao=_first(item, "descricao", "description", "habilidades"),
-            categoria=_first(item, "categoria", "tipo"),
+            categoria=item.get("categoria") or item.get("area"),
             contato=_first(item, "telefone", "phone", "contato", "whatsapp"),
             cidade=item.get("cidade"),
-            bairro=_first(item, "bairro", "neighborhood"),
+            bairro=_first(item, "bairro", "neighborhood", "logradouro"),
             lat=lat,
             lng=lng,
             raw=item,
@@ -290,6 +294,8 @@ def _sosjf_online(r: ScraperResult) -> NormalizedResult:
             raw_id = _first(item, "id", "ID") or str(i)
             bairro = item.get("neighborhood") or item.get("bairro")
             lat, lng = _geo(item)
+            if lat is None and isinstance(item.get("location"), dict):
+                lat, lng = _geo(item["location"])
             nr.pontos.append(PontoAjuda(
                 id=f"{pid}:jf:{raw_id}",
                 **base,
@@ -300,7 +306,7 @@ def _sosjf_online(r: ScraperResult) -> NormalizedResult:
                 cidade="Juiz de Fora",
                 contato=_first(item, "phone", "telefone", "contato"),
                 horario=_first(item, "horario", "hours"),
-                itens=item.get("itens") or item.get("items") or [],
+                itens=item.get("acceptedItems") or item.get("itens") or item.get("items") or [],
                 lat=lat,
                 lng=lng,
                 raw=item,
@@ -319,10 +325,16 @@ def _ajude_io(r: ScraperResult) -> NormalizedResult:
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
     base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
 
+    def _ajude_geo(item: dict) -> tuple[float | None, float | None]:
+        lat, lng = _geo(item)
+        if lat is None and isinstance(item.get("localizacao"), dict):
+            lat, lng = _geo(item["localizacao"])
+        return lat, lng
+
     for item in r.data.get("help_requests", []):
         raw_id = item.get("id", "")
         city = _city_slug(item, "cidade", "city", fallback="jf")
-        lat, lng = _geo(item)
+        lat, lng = _ajude_geo(item)
         nr.pedidos.append(Pedido(
             id=f"{pid}:{city}:{raw_id}",
             **base,
@@ -342,7 +354,7 @@ def _ajude_io(r: ScraperResult) -> NormalizedResult:
     for item in r.data.get("volunteer_offers", []):
         raw_id = item.get("id", "")
         city = _city_slug(item, "cidade", "city", fallback="jf")
-        lat, lng = _geo(item)
+        lat, lng = _ajude_geo(item)
         nr.voluntarios.append(Voluntario(
             id=f"{pid}:{city}:{raw_id}",
             **base,
@@ -360,7 +372,7 @@ def _ajude_io(r: ScraperResult) -> NormalizedResult:
     for i, item in enumerate(r.data.get("donation_points", [])):
         raw_id = item.get("id") or str(i)
         city = _city_slug(item, "cidade", "city", fallback="jf")
-        lat, lng = _geo(item)
+        lat, lng = _ajude_geo(item)
         itens_raw = item.get("itens") or item.get("items") or item.get("necessidades") or []
         nr.pontos.append(PontoAjuda(
             id=f"{pid}:{city}:{raw_id}",
@@ -437,8 +449,8 @@ def _cidade_que_cuida(r: ScraperResult) -> NormalizedResult:
         nr.voluntarios.append(Voluntario(
             id=f"{pid}:jf:{raw_id}",
             **base,
-            nome=_first(item, "titulo", "title") or u.get("nome"),
-            descricao=_first(item, "descricao", "description"),
+            nome=u.get("nome") or _first(item, "nome"),
+            descricao=_first(item, "descricao", "description", "titulo", "title"),
             categoria=_first(item, "categoria", "tipo"),
             contato=u.get("telefone") or _first(item, "telefone"),
             cidade="Juiz de Fora",
@@ -753,17 +765,15 @@ def _onde_doar(r: ScraperResult) -> NormalizedResult:
         # Extrair categorias do array de objetos aninhados
         cats = item.get("categorias") or []
         itens = [c["categoria"]["nome"] for c in cats if isinstance(c, dict) and isinstance(c.get("categoria"), dict)]
-        endereco = item.get("endereco") or ""
-        numero = item.get("numero")
-        if numero:
-            endereco = f"{endereco}, {numero}"
+        _ender_parts = [p for p in [item.get("endereco"), item.get("numero")] if p]
+        endereco = ", ".join(_ender_parts) or None
         nr.pontos.append(PontoAjuda(
             id=f"{pid}:jf:{raw_id}",
             **base,
             tipo="doacao",
             nome=item.get("nome"),
             descricao=item.get("detalhes"),
-            endereco=endereco or None,
+            endereco=endereco,
             cidade=item.get("cidade") or "Juiz de Fora",
             contato=item.get("telefone") or item.get("whatsapp"),
             itens=itens,
@@ -1210,7 +1220,8 @@ def _conta_publica(r: ScraperResult) -> NormalizedResult:
             **base,
             tipo="saldo",
             titulo="Saldo Conta Pública",
-            descricao=str(saldo.get("saldo") or saldo.get("valor") or ""),
+            descricao=str(saldo.get("saldo") or saldo.get("valor") or
+                      saldo.get("saldoTotal") or saldo.get("totalArrecadado") or ""),
             raw=saldo,
         ))
 

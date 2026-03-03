@@ -32,8 +32,11 @@ class AjudaImediataScraper(BaseScraper):
             if "itensIniciais" not in chunk:
                 continue
 
-            # Decode JS string escapes
-            chunk = chunk.encode("utf-8").decode("unicode_escape")
+            # Decode JSON string escapes (RSC data is already UTF-8)
+            try:
+                chunk = json.loads(f'"{chunk}"')
+            except (json.JSONDecodeError, ValueError):
+                continue
 
             # Find the itensIniciais array
             idx = chunk.find("itensIniciais")

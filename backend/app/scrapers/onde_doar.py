@@ -25,7 +25,10 @@ class OndeDoarScraper(BaseScraper):
             re.DOTALL,
         ):
             chunk = match.group(1)
-            chunk = chunk.encode("utf-8").decode("unicode_escape")
+            try:
+                chunk = json.loads(f'"{chunk}"')
+            except (json.JSONDecodeError, ValueError):
+                continue
 
             if "statusDoacao" not in chunk:
                 continue
@@ -66,7 +69,10 @@ class OndeDoarScraper(BaseScraper):
             re.DOTALL,
         ):
             chunk = match.group(1)
-            chunk = chunk.encode("utf-8").decode("unicode_escape")
+            try:
+                chunk = json.loads(f'"{chunk}"')
+            except (json.JSONDecodeError, ValueError):
+                continue
 
             if marker not in chunk:
                 continue
