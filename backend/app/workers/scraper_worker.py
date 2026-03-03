@@ -26,7 +26,7 @@ from app.scrapers import (
     EmergenciaMgScraper,
     InterdicoesJfScraper,
     MiAuAjudaScraper,
-    MinasEmergenciaScraper,
+    # MinasEmergenciaScraper,  # usa Playwright — desabilitado temporariamente
     OndeDoarScraper,
     ScraperResult,
     SosAnimaisMgScraper,
@@ -43,7 +43,6 @@ logger = logging.getLogger(__name__)
 
 SCRAPERS = [
     EmergenciaMgScraper,
-    MinasEmergenciaScraper,
     SosAnimaisMgScraper,
     SosMinasGrowberryScraper,
     SosJfOrgScraper,
@@ -116,14 +115,19 @@ async def _persist(session: AsyncSession, results: list[ScraperResult]) -> dict[
     return counts
 
 
-async def run_all_scrapers() -> list[ScraperResult]:
+async def run_all_scrapers(batch_size: int = 5) -> list[ScraperResult]:
     logger.info("Scraper worker started (%d portais)", len(SCRAPERS))
-    results = await asyncio.gather(*[_run_one(cls) for cls in SCRAPERS])
-    ok = sum(1 for r in results if not r.errors)
-    logger.info("Scraper worker done: %d/%d OK", ok, len(results))
+    all_results: list[ScraperResult] = []
+    batches = [SCRAPERS[i:i + batch_size] for i in range(0, len(SCRAPERS), batch_size)]
+    for batch in batches:
+        batch_results = await asyncio.gather(*[_run_one(cls) for cls in batch])
+        all_results.extend(batch_results)
+
+    ok = sum(1 for r in all_results if not r.errors)
+    logger.info("Scraper worker done: %d/%d OK", ok, len(all_results))
 
     async with AsyncSession(engine) as session:
-        counts = await _persist(session, list(results))
+        counts = await _persist(session, all_results)
 
     total = sum(counts.values())
     logger.info(
@@ -131,5 +135,4 @@ async def run_all_scrapers() -> list[ScraperResult]:
         total,
         " | ".join(f"{k}={v}" for k, v in counts.items()),
     )
-
-    return list(results)
+    return all_results

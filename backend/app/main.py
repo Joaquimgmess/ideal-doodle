@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -8,6 +9,8 @@ from app.api.main import api_router
 from app.core.config import settings
 from app.cron import build_scheduler
 from app.workers.scraper_worker import run_all_scrapers
+
+logging.basicConfig(level=logging.INFO)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
