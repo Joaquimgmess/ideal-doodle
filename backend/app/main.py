@@ -10,6 +10,8 @@ from app.core.config import settings
 from app.cron import build_scheduler
 from app.workers.scraper_worker import run_all_scrapers
 
+from app.cron import atualizar_kpi_voluntarios
+
 logging.basicConfig(level=logging.INFO)
 
 
