@@ -28,7 +28,7 @@ def build_scheduler() -> AsyncIOScheduler:
     scheduler.add_job(
         atualizar_kpi_voluntarios,
         trigger="interval",
-        hours=1,  
+        hours=settings.KPIS_INTERVAL_HOURS,  
         id="calc_kpi_voluntarios",
         replace_existing=True,
     )
@@ -38,23 +38,22 @@ def build_scheduler() -> AsyncIOScheduler:
 
 
 async def atualizar_kpi_voluntarios():
-    try:
         async with AsyncSession(engine) as session:
-            # 1. No SQLAlchemy Async, usamos session.execute()
-            statement = select(func.count()).select_from(Voluntario)
-            result = await session.execute(statement)
-            
-            # 2. Pegamos o primeiro valor do resultado (o count)
-            total = result.scalar()
+            try:
+                statement = select(func.count()).select_from(Voluntario)
+                result = await session.execute(statement)              
+                total = result.scalar()
 
-            # 3. Cria e salva o registro
-            nova_kpi = KPIHistory(nome_kpi="total_voluntarios", valor=total)
-            session.add(nova_kpi)
+                nova_kpi = KPIHistory(nome_kpi="total_voluntarios", valor=total)
+                session.add(nova_kpi)
+                
+                await session.commit()
+                logger.info("KPI de voluntários atualizada: %d", total)
+
+            #Correção: Adicionado tratamento de exceção para garantir rollback dentro do bloco    
+            except Exception as e:
+                await session.rollback()
+                logger.error("Erro ao processar KPI de voluntários: %s", e)
+                raise
             
-            await session.commit()
-            logger.info("KPI de voluntários atualizada: %d", total)
-            
-    except Exception as e:
-        # Importante dar rollback se der erro para não travar a conexão
-        await session.rollback()
-        logger.error("Erro ao processar KPI de voluntários: %s", e)
+    

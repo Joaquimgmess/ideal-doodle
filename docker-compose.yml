@@ -17,10 +17,8 @@ services:
     env_file: .env
     environment:
       - POSTGRES_SERVER=db
-    volumes:
-      - ./backend:/app             
-      - /app/.venv
     depends_on:
       - db
+
 volumes:
   db_data:

@@ -22,8 +22,10 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = build_scheduler()
+
     if settings.SCRAPER_RUN_ON_STARTUP:
         asyncio.create_task(run_all_scrapers())
+        
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
