@@ -112,6 +112,13 @@ class Pedido(ScrapedItemBase, table=True):
     bairro: str | None = None
     lat: float | None = None
     lng: float | None = None
+    data_criacao: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
+    origem: str | None = None
+    categoria_item: str | None = None
+    quantidade: int | None = None
+    unidade: str | None = None
+    urgencia: str | None = None
+    ponto_destino: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +219,13 @@ class PedidoCreate(SQLModel):
     bairro: str | None = None
     lat: float | None = None
     lng: float | None = None
+    data_criacao: datetime | None = Field(default=None, sa_type=DateTime(timezone=True)) 
+    origem: str | None = None
+    categoria_item: str | None = None
+    quantidade: int | None = None
+    unidade: str | None = None
+    urgencia: str | None = None
+    ponto_destino: str | None = None
 
 
 class PedidoUpdate(PedidoCreate):
