@@ -34,8 +34,7 @@ from app.models import (
 
 router = APIRouter(tags=["data"])
 
-_USER_PORTAL_ID = "usuario"
-_USER_PORTAL_NAME = "Contribuição de usuário"
+_USER_PORTAL_NAME = "Contribuição via API"
 _USER_PORTAL_URL = ""
 
 
@@ -43,8 +42,8 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _user_id(prefix: str, cidade: str | None = None) -> str:
-    return f"{_USER_PORTAL_ID}:{cidade or 'sem-cidade'}:{uuid.uuid4().hex[:12]}"
+def _user_id(portal_id: str, prefix: str, cidade: str | None = None) -> str:
+    return f"{portal_id}:{cidade or 'sem-cidade'}:{uuid.uuid4().hex[:12]}"
 
 
 # ---------------------------------------------------------------------------
@@ -87,8 +86,8 @@ async def create_pedido(
     session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate
 ) -> Pedido:
     item = Pedido(
-        id=_user_id("pedido", data.cidade),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "pedido", data.cidade),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -107,6 +106,28 @@ async def update_pedido(
     item = await session.get(Pedido, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/pedidos/{item_id}")
+async def patch_pedido(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate
+) -> Pedido:
+    item = await session.get(Pedido, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()
@@ -151,8 +172,8 @@ async def create_voluntario(
     session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate
 ) -> Voluntario:
     item = Voluntario(
-        id=_user_id("voluntario", data.cidade),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "voluntario", data.cidade),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -171,6 +192,28 @@ async def update_voluntario(
     item = await session.get(Voluntario, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Voluntário não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/voluntarios/{item_id}")
+async def patch_voluntario(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate
+) -> Voluntario:
+    item = await session.get(Voluntario, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Voluntário não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()
@@ -215,8 +258,8 @@ async def create_ponto(
     session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate
 ) -> PontoAjuda:
     item = PontoAjuda(
-        id=_user_id("ponto", data.cidade),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "ponto", data.cidade),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -235,6 +278,28 @@ async def update_ponto(
     item = await session.get(PontoAjuda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/pontos/{item_id}")
+async def patch_ponto(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate
+) -> PontoAjuda:
+    item = await session.get(PontoAjuda, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()
@@ -280,8 +345,8 @@ async def list_pets(
 @router.post("/pets", status_code=201)
 async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Pet:
     item = Pet(
-        id=_user_id("pet", data.cidade),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "pet", data.cidade),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -300,6 +365,28 @@ async def update_pet(
     item = await session.get(Pet, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pet não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/pets/{item_id}")
+async def patch_pet(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate
+) -> Pet:
+    item = await session.get(Pet, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Pet não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()
@@ -344,8 +431,8 @@ async def create_feed_item(
     session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate
 ) -> FeedItem:
     item = FeedItem(
-        id=_user_id("feed"),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "feed"),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -364,6 +451,28 @@ async def update_feed_item(
     item = await session.get(FeedItem, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item de feed não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/feed/{item_id}")
+async def patch_feed_item(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate
+) -> FeedItem:
+    item = await session.get(FeedItem, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item de feed não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()
@@ -405,8 +514,8 @@ async def create_outro(
     session: SessionDep, api_key: ApiKeyDep, data: OutroCreate
 ) -> Outro:
     item = Outro(
-        id=_user_id("outro"),
-        portal_id=_USER_PORTAL_ID,
+        id=_user_id(api_key.name, "outro"),
+        portal_id=api_key.name,
         portal_name=_USER_PORTAL_NAME,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
@@ -425,6 +534,28 @@ async def update_outro(
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/outros/{item_id}")
+async def patch_outro(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate
+) -> Outro:
+    item = await session.get(Outro, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    if item.portal_id != api_key.name:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
     item.sqlmodel_update(data.model_dump(exclude_unset=True))
     session.add(item)
     await session.commit()

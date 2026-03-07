@@ -33,7 +33,7 @@ async def test_create_pedido(client: AsyncClient, api_key_headers: dict[str, str
     assert data["titulo"] == "Preciso de água"
     assert data["categoria"] == "resgate"
     assert data["cidade"] == "JF"
-    assert data["portal_id"] == "usuario"
+    assert data["portal_id"] == "test-key"
 
 
 async def test_update_pedido(client: AsyncClient, api_key_headers: dict[str, str]):
@@ -53,6 +53,24 @@ async def test_update_pedido(client: AsyncClient, api_key_headers: dict[str, str
     assert response.json()["titulo"] == "Atualizado"
 
 
+async def test_patch_pedido(client: AsyncClient, api_key_headers: dict[str, str]):
+    create = await client.post(
+        f"{API}/pedidos",
+        headers=api_key_headers,
+        json={"titulo": "Original", "cidade": "JF"},
+    )
+    item_id = create.json()["id"]
+
+    response = await client.patch(
+        f"{API}/pedidos/{item_id}",
+        headers=api_key_headers,
+        json={"status": "em_atendimento"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "em_atendimento"
+    assert response.json()["titulo"] == "Original"
+
+
 async def test_update_pedido_not_found(
     client: AsyncClient, api_key_headers: dict[str, str]
 ):
@@ -62,6 +80,58 @@ async def test_update_pedido_not_found(
         json={"titulo": "X"},
     )
     assert response.status_code == 404
+
+
+async def test_update_pedido_forbidden(
+    client: AsyncClient,
+    api_key_headers: dict[str, str],
+    other_api_key_headers: dict[str, str],
+):
+    create = await client.post(
+        f"{API}/pedidos",
+        headers=api_key_headers,
+        json={"titulo": "Meu pedido", "cidade": "JF"},
+    )
+    item_id = create.json()["id"]
+
+    response = await client.put(
+        f"{API}/pedidos/{item_id}",
+        headers=other_api_key_headers,
+        json={"titulo": "Hackeado"},
+    )
+    assert response.status_code == 403
+
+
+async def test_patch_pedido_forbidden(
+    client: AsyncClient,
+    api_key_headers: dict[str, str],
+    other_api_key_headers: dict[str, str],
+):
+    create = await client.post(
+        f"{API}/pedidos",
+        headers=api_key_headers,
+        json={"titulo": "Meu pedido", "cidade": "JF"},
+    )
+    item_id = create.json()["id"]
+
+    response = await client.patch(
+        f"{API}/pedidos/{item_id}",
+        headers=other_api_key_headers,
+        json={"status": "atendido"},
+    )
+    assert response.status_code == 403
+
+
+async def test_create_pedido_saves_portal_id(
+    client: AsyncClient, api_key_headers: dict[str, str]
+):
+    response = await client.post(
+        f"{API}/pedidos",
+        headers=api_key_headers,
+        json={"titulo": "Teste portal", "cidade": "JF"},
+    )
+    assert response.status_code == 201
+    assert response.json()["portal_id"] == "test-key"
 
 
 async def test_list_pedidos_no_api_key(client: AsyncClient):

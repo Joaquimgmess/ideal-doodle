@@ -231,7 +231,7 @@ class PedidoCreate(SQLModel):
 
 
 class PedidoUpdate(PedidoCreate):
-    pass
+    status: str | None = None
 
 
 class VoluntarioCreate(SQLModel):
