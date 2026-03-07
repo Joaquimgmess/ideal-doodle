@@ -28,6 +28,7 @@ dev = [
     "mypy>=1.8.0,<2.0.0",
     "ruff>=0.2.2,<1.0.0",
     "coverage>=7.4.3,<8.0.0",
+    "pre-commit>=4.0.0",
 ]
 
 [build-system]
