@@ -85,9 +85,9 @@ async def create_pedido(
     session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate
 ) -> Pedido:
     item = Pedido(
-        id=_user_id(api_key.name, "pedido", data.cidade),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "pedido", data.cidade),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -105,7 +105,7 @@ async def update_pedido(
     item = await session.get(Pedido, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -123,7 +123,7 @@ async def patch_pedido(
     item = await session.get(Pedido, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -171,9 +171,9 @@ async def create_voluntario(
     session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate
 ) -> Voluntario:
     item = Voluntario(
-        id=_user_id(api_key.name, "voluntario", data.cidade),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "voluntario", data.cidade),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -191,7 +191,7 @@ async def update_voluntario(
     item = await session.get(Voluntario, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Voluntário não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -209,7 +209,7 @@ async def patch_voluntario(
     item = await session.get(Voluntario, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Voluntário não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -257,9 +257,9 @@ async def create_ponto(
     session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate
 ) -> PontoAjuda:
     item = PontoAjuda(
-        id=_user_id(api_key.name, "ponto", data.cidade),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "ponto", data.cidade),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -277,7 +277,7 @@ async def update_ponto(
     item = await session.get(PontoAjuda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -295,7 +295,7 @@ async def patch_ponto(
     item = await session.get(PontoAjuda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -344,9 +344,9 @@ async def list_pets(
 @router.post("/pets", status_code=201)
 async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Pet:
     item = Pet(
-        id=_user_id(api_key.name, "pet", data.cidade),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "pet", data.cidade),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -364,7 +364,7 @@ async def update_pet(
     item = await session.get(Pet, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pet não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -382,7 +382,7 @@ async def patch_pet(
     item = await session.get(Pet, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pet não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -430,9 +430,9 @@ async def create_feed_item(
     session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate
 ) -> FeedItem:
     item = FeedItem(
-        id=_user_id(api_key.name, "feed"),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "feed"),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -450,7 +450,7 @@ async def update_feed_item(
     item = await session.get(FeedItem, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item de feed não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -468,7 +468,7 @@ async def patch_feed_item(
     item = await session.get(FeedItem, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item de feed não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -513,9 +513,9 @@ async def create_outro(
     session: SessionDep, api_key: ApiKeyDep, data: OutroCreate
 ) -> Outro:
     item = Outro(
-        id=_user_id(api_key.name, "outro"),
-        portal_id=api_key.name,
-        portal_name=data.portal_name or api_key.name,
+        id=_user_id(api_key.slug, "outro"),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
         **data.model_dump(exclude={"portal_name"}),
@@ -533,7 +533,7 @@ async def update_outro(
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -551,7 +551,7 @@ async def patch_outro(
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")
-    if item.portal_id != api_key.name:
+    if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )

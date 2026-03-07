@@ -104,6 +104,7 @@ async def api_key_headers(session: AsyncSession) -> dict[str, str]:
     key_hash = hashlib.sha256(plain_key.encode()).hexdigest()
     api_key = ApiKey(
         name="test-key",
+        slug="test-key",
         prefix=plain_key[:8],
         key_hash=key_hash,
         is_active=True,
@@ -119,6 +120,7 @@ async def other_api_key_headers(session: AsyncSession) -> dict[str, str]:
     key_hash = hashlib.sha256(plain_key.encode()).hexdigest()
     api_key = ApiKey(
         name="other-key",
+        slug="other-key",
         prefix=plain_key[:8],
         key_hash=key_hash,
         is_active=True,

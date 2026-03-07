@@ -131,7 +131,7 @@ async def test_create_pedido_saves_portal_id(
         json={"titulo": "Teste portal", "cidade": "JF"},
     )
     assert response.status_code == 201
-    assert response.json()["portal_id"] == "test-key"
+    assert response.json()["portal_id"] == "test-key"  # slug da api key
 
 
 async def test_list_pedidos_no_api_key(client: AsyncClient):

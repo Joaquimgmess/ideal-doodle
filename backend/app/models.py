@@ -320,11 +320,16 @@ class OutroUpdate(OutroCreate):
 # ---------------------------------------------------------------------------
 
 
+def _slugify(value: str) -> str:
+    return value.strip().lower().replace(" ", "-")
+
+
 class ApiKey(SQLModel, table=True):
     __tablename__ = "api_key"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=255)
+    slug: str = Field(max_length=255, unique=True, index=True)
     description: str | None = None
     prefix: str = Field(max_length=8, index=True)
     key_hash: str = Field(unique=True)
@@ -383,6 +388,7 @@ class ApiKeyCreate(SQLModel):
 class ApiKeyPublic(SQLModel):
     id: uuid.UUID
     name: str
+    slug: str
     description: str | None
     prefix: str
     created_at: datetime

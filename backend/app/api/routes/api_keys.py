@@ -6,7 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
 from app.api.deps import ApiKeyDep, SessionDep, get_current_active_superuser
-from app.models import ApiKey, ApiKeyCreate, ApiKeyCreated, ApiKeyPublic, Message
+from app.models import (
+    ApiKey,
+    ApiKeyCreate,
+    ApiKeyCreated,
+    ApiKeyPublic,
+    Message,
+    _slugify,
+)
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
@@ -23,8 +30,15 @@ def _generate_key() -> tuple[str, str, str]:
 @router.post("", response_model=ApiKeyCreated)
 async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> ApiKeyCreated:
     plain_key, prefix, key_hash = _generate_key()
+    slug = _slugify(key_in.name)
+    existing = (await session.exec(select(ApiKey).where(ApiKey.slug == slug))).first()
+    if existing:
+        raise HTTPException(
+            status_code=409, detail="Já existe uma API Key com este nome"
+        )
     api_key = ApiKey(
         name=key_in.name,
+        slug=slug,
         description=key_in.description,
         prefix=prefix,
         key_hash=key_hash,
@@ -35,6 +49,7 @@ async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> ApiKeyCre
     return ApiKeyCreated(
         id=api_key.id,
         name=api_key.name,
+        slug=api_key.slug,
         description=api_key.description,
         prefix=api_key.prefix,
         created_at=api_key.created_at,
