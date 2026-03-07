@@ -10,7 +10,9 @@ engine: AsyncEngine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
 
 async def init_db(session: AsyncSession) -> None:
-    result = await session.exec(select(User).where(User.email == settings.FIRST_SUPERUSER))
+    result = await session.exec(
+        select(User).where(User.email == settings.FIRST_SUPERUSER)
+    )
     user = result.first()
     if not user:
         user_in = UserCreate(

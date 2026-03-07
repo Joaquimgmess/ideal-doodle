@@ -1,13 +1,19 @@
 import hashlib
 import secrets
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
 from app.api.deps import ApiKeyDep, SessionDep, get_current_active_superuser
-from app.models import ApiKey, ApiKeyCreate, ApiKeyCreated, ApiKeyPublic
+from app.models import (
+    ApiKey,
+    ApiKeyCreate,
+    ApiKeyCreated,
+    ApiKeyPublic,
+    Message,
+    _slugify,
+)
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
@@ -22,10 +28,17 @@ def _generate_key() -> tuple[str, str, str]:
 
 
 @router.post("", response_model=ApiKeyCreated)
-async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> Any:
+async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> ApiKeyCreated:
     plain_key, prefix, key_hash = _generate_key()
+    slug = _slugify(key_in.name)
+    existing = (await session.exec(select(ApiKey).where(ApiKey.slug == slug))).first()
+    if existing:
+        raise HTTPException(
+            status_code=409, detail="Já existe uma API Key com este nome"
+        )
     api_key = ApiKey(
         name=key_in.name,
+        slug=slug,
         description=key_in.description,
         prefix=prefix,
         key_hash=key_hash,
@@ -36,6 +49,7 @@ async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> Any:
     return ApiKeyCreated(
         id=api_key.id,
         name=api_key.name,
+        slug=api_key.slug,
         description=api_key.description,
         prefix=api_key.prefix,
         created_at=api_key.created_at,
@@ -49,15 +63,17 @@ async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> Any:
     dependencies=[Depends(get_current_active_superuser)],
     response_model=list[ApiKeyPublic],
 )
-async def list_api_keys(session: SessionDep) -> Any:
+async def list_api_keys(session: SessionDep) -> list[ApiKeyPublic]:
     keys = (await session.exec(select(ApiKey))).all()
     return keys
 
 
 @router.get("/me/{prefix}", response_model=ApiKeyPublic)
-async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> Any:
+async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> ApiKeyPublic:
     if api_key.prefix != prefix:
-        raise HTTPException(status_code=403, detail="Prefix does not match authenticated key")
+        raise HTTPException(
+            status_code=403, detail="Prefixo não corresponde à chave autenticada"
+        )
     return api_key
 
 
@@ -65,11 +81,11 @@ async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> Any:
     "/{key_id}",
     dependencies=[Depends(get_current_active_superuser)],
 )
-async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> Any:
+async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> Message:
     api_key = await session.get(ApiKey, key_id)
     if not api_key:
         raise HTTPException(status_code=404, detail="API Key não encontrada")
     api_key.is_active = False
     session.add(api_key)
     await session.commit()
-    return {"message": "API Key desativada"}
+    return Message(message="API Key desativada")
