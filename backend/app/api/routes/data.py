@@ -66,7 +66,7 @@ async def list_pedidos(
     cidade: str | None = None,
     categoria: str | None = None,
     status: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Pedido)
     if portal_id:
         q = q.where(Pedido.portal_id == portal_id)
@@ -89,7 +89,7 @@ async def list_pedidos(
 @router.post("/pedidos", status_code=201)
 async def create_pedido(
     session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate
-) -> Any:
+) -> Pedido:
     item = Pedido(
         id=_user_id("pedido", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -107,7 +107,7 @@ async def create_pedido(
 @router.put("/pedidos/{item_id}")
 async def update_pedido(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate
-) -> Any:
+) -> Pedido:
     item = await session.get(Pedido, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
@@ -132,7 +132,7 @@ async def list_voluntarios(
     portal_id: str | None = None,
     cidade: str | None = None,
     categoria: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Voluntario)
     if portal_id:
         q = q.where(Voluntario.portal_id == portal_id)
@@ -153,7 +153,7 @@ async def list_voluntarios(
 @router.post("/voluntarios", status_code=201)
 async def create_voluntario(
     session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate
-) -> Any:
+) -> Voluntario:
     item = Voluntario(
         id=_user_id("voluntario", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -171,7 +171,7 @@ async def create_voluntario(
 @router.put("/voluntarios/{item_id}")
 async def update_voluntario(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate
-) -> Any:
+) -> Voluntario:
     item = await session.get(Voluntario, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Voluntário não encontrado")
@@ -196,7 +196,7 @@ async def list_pontos(
     portal_id: str | None = None,
     cidade: str | None = None,
     tipo: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(PontoAjuda)
     if portal_id:
         q = q.where(PontoAjuda.portal_id == portal_id)
@@ -217,7 +217,7 @@ async def list_pontos(
 @router.post("/pontos", status_code=201)
 async def create_ponto(
     session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate
-) -> Any:
+) -> PontoAjuda:
     item = PontoAjuda(
         id=_user_id("ponto", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -235,7 +235,7 @@ async def create_ponto(
 @router.put("/pontos/{item_id}")
 async def update_ponto(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate
-) -> Any:
+) -> PontoAjuda:
     item = await session.get(PontoAjuda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
@@ -261,7 +261,7 @@ async def list_pets(
     cidade: str | None = None,
     tipo: str | None = None,
     especie: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Pet)
     if portal_id:
         q = q.where(Pet.portal_id == portal_id)
@@ -282,7 +282,7 @@ async def list_pets(
 
 
 @router.post("/pets", status_code=201)
-async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Any:
+async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Pet:
     item = Pet(
         id=_user_id("pet", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -300,7 +300,7 @@ async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -
 @router.put("/pets/{item_id}")
 async def update_pet(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate
-) -> Any:
+) -> Pet:
     item = await session.get(Pet, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pet não encontrado")
@@ -325,7 +325,7 @@ async def list_feed(
     portal_id: str | None = None,
     tipo: str | None = None,
     urgente: bool | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(FeedItem)
     if portal_id:
         q = q.where(FeedItem.portal_id == portal_id)
@@ -346,7 +346,7 @@ async def list_feed(
 @router.post("/feed", status_code=201)
 async def create_feed_item(
     session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate
-) -> Any:
+) -> FeedItem:
     item = FeedItem(
         id=_user_id("feed"),
         portal_id=_USER_PORTAL_ID,
@@ -364,7 +364,7 @@ async def create_feed_item(
 @router.put("/feed/{item_id}")
 async def update_feed_item(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate
-) -> Any:
+) -> FeedItem:
     item = await session.get(FeedItem, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item de feed não encontrado")
@@ -388,7 +388,7 @@ async def list_outros(
     limit: int = Query(default=100, le=500),
     portal_id: str | None = None,
     tipo: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Outro)
     if portal_id:
         q = q.where(Outro.portal_id == portal_id)
@@ -407,7 +407,7 @@ async def list_outros(
 @router.post("/outros", status_code=201)
 async def create_outro(
     session: SessionDep, api_key: ApiKeyDep, data: OutroCreate
-) -> Any:
+) -> Outro:
     item = Outro(
         id=_user_id("outro"),
         portal_id=_USER_PORTAL_ID,
@@ -425,7 +425,7 @@ async def create_outro(
 @router.put("/outros/{item_id}")
 async def update_outro(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate
-) -> Any:
+) -> Outro:
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")

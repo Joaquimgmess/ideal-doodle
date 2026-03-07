@@ -1,7 +1,6 @@
 import hashlib
 import secrets
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
@@ -22,7 +21,7 @@ def _generate_key() -> tuple[str, str, str]:
 
 
 @router.post("", response_model=ApiKeyCreated)
-async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> Any:
+async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> ApiKeyCreated:
     plain_key, prefix, key_hash = _generate_key()
     api_key = ApiKey(
         name=key_in.name,
@@ -49,13 +48,13 @@ async def create_api_key(session: SessionDep, key_in: ApiKeyCreate) -> Any:
     dependencies=[Depends(get_current_active_superuser)],
     response_model=list[ApiKeyPublic],
 )
-async def list_api_keys(session: SessionDep) -> Any:
+async def list_api_keys(session: SessionDep) -> list[ApiKeyPublic]:
     keys = (await session.exec(select(ApiKey))).all()
     return keys
 
 
 @router.get("/me/{prefix}", response_model=ApiKeyPublic)
-async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> Any:
+async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> ApiKeyPublic:
     if api_key.prefix != prefix:
         raise HTTPException(
             status_code=403, detail="Prefix does not match authenticated key"
@@ -67,7 +66,7 @@ async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> Any:
     "/{key_id}",
     dependencies=[Depends(get_current_active_superuser)],
 )
-async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> Any:
+async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> dict[str, str]:
     api_key = await session.get(ApiKey, key_id)
     if not api_key:
         raise HTTPException(status_code=404, detail="API Key não encontrada")
