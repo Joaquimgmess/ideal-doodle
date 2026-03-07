@@ -60,7 +60,7 @@ class AjudaJfArcteiScraper(BaseScraper):
             return_exceptions=True,
         )
 
-        for key, res in zip(keys, responses):
+        for key, res in zip(keys, responses, strict=True):
             if isinstance(res, Exception):
                 result.errors.append(f"{key}: {res}")
                 result.data[key] = []

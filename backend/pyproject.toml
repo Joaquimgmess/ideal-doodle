@@ -67,8 +67,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "app/api/routes/data.py" = ["ARG001"]
 "app/main.py" = ["ARG001"]
-"app/scrapers/normalizer.py" = ["C408"]
-"app/scrapers/ajuda_jf_arctei.py" = ["B905"]
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true

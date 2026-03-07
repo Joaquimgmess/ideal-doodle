@@ -86,7 +86,12 @@ def normalize_all(results: list[ScraperResult]) -> NormalizedResult:
 def _emergencia_mg(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for item in r.data.get("emergency_contacts", []):
         raw_id = hashlib.md5(
@@ -163,7 +168,12 @@ _NORMALIZERS["01-emergencia-mg"] = _emergencia_mg
 def _sos_animais_mg(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     tipo_map = {
         "lost": "perdido",
@@ -202,7 +212,12 @@ _NORMALIZERS["03-sos-animais-mg"] = _sos_animais_mg
 def _sos_minas_growberry(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for item in r.data.get("pedidos", []):
         raw_id = _first(item, "id", "ID", "codigo") or ""
@@ -277,7 +292,12 @@ _NORMALIZERS["05-sos-minas-growberry"] = _sos_minas_growberry
 def _sosjf_org(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     tipo_map = {
         "alerts": "alerta",
@@ -315,7 +335,12 @@ _NORMALIZERS["06-sosjf-org"] = _sosjf_org
 def _sosjf_online(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     tipo_map = {
         "collection_points": "coleta",
@@ -361,7 +386,12 @@ _NORMALIZERS["07-sosjf-online"] = _sosjf_online
 def _ajude_io(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     def _ajude_geo(item: dict) -> tuple[float | None, float | None]:
         lat, lng = _geo(item)
@@ -465,7 +495,12 @@ _NORMALIZERS["08-ajude-io"] = _ajude_io
 def _cidade_que_cuida(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     def _users(item: dict[str, Any]) -> dict[str, Any]:
         u = item.get("users")
@@ -565,7 +600,12 @@ _NORMALIZERS["09-cidade-que-cuida"] = _cidade_que_cuida
 def _minas_emergencia(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("pontos", [])):
         raw_id = _first(item, "id", "ID") or str(i)
@@ -602,7 +642,12 @@ _NORMALIZERS["02-minas-emergencia"] = _minas_emergencia
 def _ajude_juiz_de_fora(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("collection_points", [])):
         raw_id = item.get("id") or str(i)
@@ -668,7 +713,12 @@ _NORMALIZERS["10-ajude-juiz-de-fora"] = _ajude_juiz_de_fora
 def _sos_ser_luz_jf(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     form_info = r.data.get("form_fields", {})
     if form_info.get("available"):
@@ -696,7 +746,12 @@ _NORMALIZERS["11-sos-ser-luz-jf"] = _sos_ser_luz_jf
 def _ajuda_imediata(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for item in r.data.get("items", []):
         raw_id = item.get("id") or ""
@@ -749,7 +804,12 @@ _NORMALIZERS["12-ajuda-imediata"] = _ajuda_imediata
 def _ajuda_jf_arctei(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("requests", [])):
         raw_id = item.get("id") or str(i)
@@ -844,7 +904,12 @@ _NORMALIZERS["13-ajuda-jf-arctei"] = _ajuda_jf_arctei
 def _onde_doar(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("donation_points", [])):
         raw_id = item.get("id") or str(i)
@@ -908,7 +973,12 @@ _NORMALIZERS["15-onde-doar"] = _onde_doar
 def _interdicoes_jf(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for item in r.data.get("interdicoes", []):
         key = f"{item.get('Endereco', '')}:{item.get('Data_Registro', '')}:{item.get('Hora_registro', '')}"
@@ -942,7 +1012,12 @@ _NORMALIZERS["16-interdicoes-jf"] = _interdicoes_jf
 def _ajuda_emjf(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("collection_points", [])):
         raw_id = item.get("id") or str(i)
@@ -1011,7 +1086,12 @@ _NORMALIZERS["17-ajuda-emjf"] = _ajuda_emjf
 def _mi_au_ajuda(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("acolhedores", [])):
         raw_id = item.get("id") or str(i)
@@ -1065,7 +1145,12 @@ _NORMALIZERS["18-mi-au-ajuda"] = _mi_au_ajuda
 def _zona_da_mata_alertas(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("alerts", [])):
         raw_id = item.get("id") or str(i)
@@ -1094,7 +1179,12 @@ _NORMALIZERS["19-zona-da-mata-alertas"] = _zona_da_mata_alertas
 def _unidos_por_jf(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     for i, item in enumerate(r.data.get("pedidos", [])):
         raw_id = item.get("id") or str(i)
@@ -1148,7 +1238,12 @@ _NORMALIZERS["20-unidos-por-jf"] = _unidos_por_jf
 def _ajude_jf(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     # Pets perdidos
     for item in r.data.get("pets_perdidos_public", []):
@@ -1353,7 +1448,12 @@ _NORMALIZERS["21-ajude-jf"] = _ajude_jf
 def _conta_publica(r: ScraperResult) -> NormalizedResult:
     nr = NormalizedResult()
     pid, pname, purl, sa = r.portal_id, r.portal_name, r.url, r.scraped_at
-    base = dict(portal_id=pid, portal_name=pname, portal_url=purl, scraped_at=sa)
+    base = {
+        "portal_id": pid,
+        "portal_name": pname,
+        "portal_url": purl,
+        "scraped_at": sa,
+    }
 
     saldo = r.data.get("saldo")
     if saldo and isinstance(saldo, dict):
