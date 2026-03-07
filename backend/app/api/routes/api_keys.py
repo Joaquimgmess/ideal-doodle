@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
 from app.api.deps import ApiKeyDep, SessionDep, get_current_active_superuser
-from app.models import ApiKey, ApiKeyCreate, ApiKeyCreated, ApiKeyPublic
+from app.models import ApiKey, ApiKeyCreate, ApiKeyCreated, ApiKeyPublic, Message
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
@@ -57,7 +57,7 @@ async def list_api_keys(session: SessionDep) -> list[ApiKeyPublic]:
 async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> ApiKeyPublic:
     if api_key.prefix != prefix:
         raise HTTPException(
-            status_code=403, detail="Prefix does not match authenticated key"
+            status_code=403, detail="Prefixo não corresponde à chave autenticada"
         )
     return api_key
 
@@ -66,11 +66,11 @@ async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> ApiKeyPublic:
     "/{key_id}",
     dependencies=[Depends(get_current_active_superuser)],
 )
-async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> dict[str, str]:
+async def deactivate_api_key(session: SessionDep, key_id: uuid.UUID) -> Message:
     api_key = await session.get(ApiKey, key_id)
     if not api_key:
         raise HTTPException(status_code=404, detail="API Key não encontrada")
     api_key.is_active = False
     session.add(api_key)
     await session.commit()
-    return {"message": "API Key desativada"}
+    return Message(message="API Key desativada")

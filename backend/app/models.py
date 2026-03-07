@@ -329,6 +329,46 @@ class ApiKey(SQLModel, table=True):
     is_active: bool = Field(default=True, index=True)
 
 
+# ---------------------------------------------------------------------------
+# Respostas de listagem tipadas
+# ---------------------------------------------------------------------------
+
+
+class PedidoList(SQLModel):
+    data: list[Pedido]
+    count: int
+
+
+class VoluntarioList(SQLModel):
+    data: list[Voluntario]
+    count: int
+
+
+class PontoAjudaList(SQLModel):
+    data: list[PontoAjuda]
+    count: int
+
+
+class PetList(SQLModel):
+    data: list[Pet]
+    count: int
+
+
+class FeedItemList(SQLModel):
+    data: list[FeedItem]
+    count: int
+
+
+class OutroList(SQLModel):
+    data: list[Outro]
+    count: int
+
+
+# ---------------------------------------------------------------------------
+# API Key
+# ---------------------------------------------------------------------------
+
+
 class ApiKeyCreate(SQLModel):
     name: str = Field(max_length=255)
     description: str | None = None

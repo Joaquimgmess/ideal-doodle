@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlmodel import col, func, select
@@ -9,21 +8,27 @@ from app.api.deps import ApiKeyDep, SessionDep
 from app.models import (
     FeedItem,
     FeedItemCreate,
+    FeedItemList,
     FeedItemUpdate,
     Outro,
     OutroCreate,
+    OutroList,
     OutroUpdate,
     Pedido,
     PedidoCreate,
+    PedidoList,
     PedidoUpdate,
     Pet,
     PetCreate,
+    PetList,
     PetUpdate,
     PontoAjuda,
     PontoAjudaCreate,
+    PontoAjudaList,
     PontoAjudaUpdate,
     Voluntario,
     VoluntarioCreate,
+    VoluntarioList,
     VoluntarioUpdate,
 )
 
@@ -43,15 +48,6 @@ def _user_id(prefix: str, cidade: str | None = None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# helpers
-# ---------------------------------------------------------------------------
-
-
-def _list_response(data: list[Any], count: int) -> dict[str, Any]:
-    return {"data": data, "count": count}
-
-
-# ---------------------------------------------------------------------------
 # Pedidos
 # ---------------------------------------------------------------------------
 
@@ -66,7 +62,7 @@ async def list_pedidos(
     cidade: str | None = None,
     categoria: str | None = None,
     status: str | None = None,
-) -> dict[str, Any]:
+) -> PedidoList:
     q = select(Pedido)
     if portal_id:
         q = q.where(Pedido.portal_id == portal_id)
@@ -83,7 +79,7 @@ async def list_pedidos(
             q.order_by(col(Pedido.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return PedidoList(data=items, count=count)
 
 
 @router.post("/pedidos", status_code=201)
@@ -132,7 +128,7 @@ async def list_voluntarios(
     portal_id: str | None = None,
     cidade: str | None = None,
     categoria: str | None = None,
-) -> dict[str, Any]:
+) -> VoluntarioList:
     q = select(Voluntario)
     if portal_id:
         q = q.where(Voluntario.portal_id == portal_id)
@@ -147,7 +143,7 @@ async def list_voluntarios(
             q.order_by(col(Voluntario.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return VoluntarioList(data=items, count=count)
 
 
 @router.post("/voluntarios", status_code=201)
@@ -196,7 +192,7 @@ async def list_pontos(
     portal_id: str | None = None,
     cidade: str | None = None,
     tipo: str | None = None,
-) -> dict[str, Any]:
+) -> PontoAjudaList:
     q = select(PontoAjuda)
     if portal_id:
         q = q.where(PontoAjuda.portal_id == portal_id)
@@ -211,7 +207,7 @@ async def list_pontos(
             q.order_by(col(PontoAjuda.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return PontoAjudaList(data=items, count=count)
 
 
 @router.post("/pontos", status_code=201)
@@ -261,7 +257,7 @@ async def list_pets(
     cidade: str | None = None,
     tipo: str | None = None,
     especie: str | None = None,
-) -> dict[str, Any]:
+) -> PetList:
     q = select(Pet)
     if portal_id:
         q = q.where(Pet.portal_id == portal_id)
@@ -278,7 +274,7 @@ async def list_pets(
             q.order_by(col(Pet.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return PetList(data=items, count=count)
 
 
 @router.post("/pets", status_code=201)
@@ -325,7 +321,7 @@ async def list_feed(
     portal_id: str | None = None,
     tipo: str | None = None,
     urgente: bool | None = None,
-) -> dict[str, Any]:
+) -> FeedItemList:
     q = select(FeedItem)
     if portal_id:
         q = q.where(FeedItem.portal_id == portal_id)
@@ -340,7 +336,7 @@ async def list_feed(
             q.order_by(col(FeedItem.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return FeedItemList(data=items, count=count)
 
 
 @router.post("/feed", status_code=201)
@@ -388,7 +384,7 @@ async def list_outros(
     limit: int = Query(default=100, le=500),
     portal_id: str | None = None,
     tipo: str | None = None,
-) -> dict[str, Any]:
+) -> OutroList:
     q = select(Outro)
     if portal_id:
         q = q.where(Outro.portal_id == portal_id)
@@ -401,7 +397,7 @@ async def list_outros(
             q.order_by(col(Outro.scraped_at).desc()).offset(skip).limit(limit)
         )
     ).all()
-    return _list_response(items, count)
+    return OutroList(data=items, count=count)
 
 
 @router.post("/outros", status_code=201)
