@@ -7,7 +7,7 @@ from app.scrapers.base import BaseScraper, ScraperResult
 def _js_literal_to_json(text: str) -> str:
     """Convert JS object literal to valid JSON (add quotes to keys)."""
     # Add quotes around unquoted keys: {id:1,name:"x"} -> {"id":1,"name":"x"}
-    return re.sub(r'(?<=[{,])(\w+)(?=:)', r'"\1"', text)
+    return re.sub(r"(?<=[{,])(\w+)(?=:)", r'"\1"', text)
 
 
 class AjudaEmjfScraper(BaseScraper):
@@ -34,9 +34,7 @@ class AjudaEmjfScraper(BaseScraper):
         data: dict = {"collection_points": [], "shelters": [], "pix_keys": []}
 
         # Shelters: [{id:100,pointType:"shelter",name:"...",... }]
-        shelter_match = re.search(
-            r'\[(\{id:\d+,pointType:"shelter".*?\})\]', js
-        )
+        shelter_match = re.search(r'\[(\{id:\d+,pointType:"shelter".*?\})\]', js)
         if shelter_match:
             try:
                 json_str = _js_literal_to_json(shelter_match.group(0))

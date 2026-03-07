@@ -78,7 +78,12 @@ class OndeDoarScraper(BaseScraper):
                 continue
 
             # Find arrays containing the marker
-            for arr_match in re.finditer(r'\[(\{[^[\]]*?' + re.escape(marker) + r'[^[\]]*?\}(?:,\{[^[\]]*?\})*)\]', chunk):
+            for arr_match in re.finditer(
+                r"\[(\{[^[\]]*?"
+                + re.escape(marker)
+                + r"[^[\]]*?\}(?:,\{[^[\]]*?\})*)\]",
+                chunk,
+            ):
                 try:
                     parsed = json.loads(f"[{arr_match.group(1)}]")
                     items.extend(parsed)

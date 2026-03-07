@@ -1,6 +1,5 @@
 from app.scrapers.base import BaseScraper, ScraperResult
 
-
 API_URL = "https://v1.sos-jf.workers.dev/"
 
 

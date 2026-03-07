@@ -57,7 +57,9 @@ async def list_api_keys(session: SessionDep) -> Any:
 @router.get("/me/{prefix}", response_model=ApiKeyPublic)
 async def get_my_api_key(prefix: str, api_key: ApiKeyDep) -> Any:
     if api_key.prefix != prefix:
-        raise HTTPException(status_code=403, detail="Prefix does not match authenticated key")
+        raise HTTPException(
+            status_code=403, detail="Prefix does not match authenticated key"
+        )
     return api_key
 
 

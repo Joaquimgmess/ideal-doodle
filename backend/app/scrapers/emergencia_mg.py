@@ -37,15 +37,21 @@ class EmergenciaMgScraper(BaseScraper):
                     desc_el = element.select_one(".card-desc")
                     titulo = (
                         "".join(title_el.find_all(string=True, recursive=False)).strip()
-                        if title_el else None
+                        if title_el
+                        else None
                     )
-                    results.append({
-                        "titulo": titulo or (title_el.get_text(strip=True) if title_el else None),
-                        "descricao": desc_el.get_text(strip=True) if desc_el else None,
-                        "url": element.get("href"),
-                        "urgente": "urgent" in element.get("class", []),
-                        "secao": current_section,
-                    })
+                    results.append(
+                        {
+                            "titulo": titulo
+                            or (title_el.get_text(strip=True) if title_el else None),
+                            "descricao": desc_el.get_text(strip=True)
+                            if desc_el
+                            else None,
+                            "url": element.get("href"),
+                            "urgente": "urgent" in element.get("class", []),
+                            "secao": current_section,
+                        }
+                    )
         except Exception as exc:
             raise RuntimeError(f"get_help_links: {exc}") from exc
 
@@ -72,13 +78,17 @@ class EmergenciaMgScraper(BaseScraper):
                 if card.select_one(".tag.tag-dog"):
                     animais.append("cachorro")
 
-                results.append({
-                    "nome": title_el.get_text(strip=True) if title_el else None,
-                    "animais": animais,
-                    "porte": size_el.get_text(strip=True) if size_el else None,
-                    "telefone": desc_el.get_text(strip=True) if desc_el else None,
-                    "whatsapp_url": whatsapp_el.get("href") if whatsapp_el else None,
-                })
+                results.append(
+                    {
+                        "nome": title_el.get_text(strip=True) if title_el else None,
+                        "animais": animais,
+                        "porte": size_el.get_text(strip=True) if size_el else None,
+                        "telefone": desc_el.get_text(strip=True) if desc_el else None,
+                        "whatsapp_url": whatsapp_el.get("href")
+                        if whatsapp_el
+                        else None,
+                    }
+                )
         except Exception as exc:
             raise RuntimeError(f"get_animal_shelters: {exc}") from exc
 
@@ -98,11 +108,15 @@ class EmergenciaMgScraper(BaseScraper):
                 desc_el = card.select_one(".card-desc")
                 whatsapp_el = card.select_one("a[href]")
 
-                results.append({
-                    "nome": title_el.get_text(strip=True) if title_el else None,
-                    "telefone": desc_el.get_text(strip=True) if desc_el else None,
-                    "whatsapp_url": whatsapp_el.get("href") if whatsapp_el else None,
-                })
+                results.append(
+                    {
+                        "nome": title_el.get_text(strip=True) if title_el else None,
+                        "telefone": desc_el.get_text(strip=True) if desc_el else None,
+                        "whatsapp_url": whatsapp_el.get("href")
+                        if whatsapp_el
+                        else None,
+                    }
+                )
         except Exception as exc:
             raise RuntimeError(f"get_transport_volunteers: {exc}") from exc
 

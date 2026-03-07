@@ -53,7 +53,7 @@ class AjudaJfArcteiScraper(BaseScraper):
         )
 
         actions = ["listRequests", "listPoints", "listVolunteers", "listVistorias"]
-        keys    = ["requests",     "points",     "volunteers",     "vistorias"]
+        keys = ["requests", "points", "volunteers", "vistorias"]
 
         responses = await asyncio.gather(
             *[self._fetch_action(a) for a in actions],

@@ -47,7 +47,9 @@ class AjudeJuizDeForaScraper(BaseScraper):
 
     async def get_collection_points(self) -> list[dict]:
         async with self.get_client() as client:
-            return await self._fetch_table(client, "collection_points", "&order=created_at.desc")
+            return await self._fetch_table(
+                client, "collection_points", "&order=created_at.desc"
+            )
 
     async def get_needs(self) -> list[dict]:
         async with self.get_client() as client:

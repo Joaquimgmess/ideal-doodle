@@ -16,6 +16,7 @@ def get_datetime_utc() -> datetime:
 # User
 # ---------------------------------------------------------------------------
 
+
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
@@ -71,6 +72,7 @@ class UsersPublic(SQLModel):
 # Generic
 # ---------------------------------------------------------------------------
 
+
 class Message(SQLModel):
     message: str
 
@@ -88,6 +90,7 @@ class TokenPayload(SQLModel):
 # Scraped data — base comum (não é tabela)
 # ---------------------------------------------------------------------------
 
+
 class ScrapedItemBase(SQLModel):
     portal_id: str = Field(index=True)
     portal_name: str
@@ -99,6 +102,7 @@ class ScrapedItemBase(SQLModel):
 # ---------------------------------------------------------------------------
 # Pedido
 # ---------------------------------------------------------------------------
+
 
 class Pedido(ScrapedItemBase, table=True):
     id: str = Field(primary_key=True)
@@ -118,6 +122,7 @@ class Pedido(ScrapedItemBase, table=True):
 # Voluntario
 # ---------------------------------------------------------------------------
 
+
 class Voluntario(ScrapedItemBase, table=True):
     id: str = Field(primary_key=True)
     nome: str | None = None
@@ -134,6 +139,7 @@ class Voluntario(ScrapedItemBase, table=True):
 # PontoAjuda
 # ---------------------------------------------------------------------------
 
+
 class PontoAjuda(ScrapedItemBase, table=True):
     __tablename__ = "ponto_ajuda"
 
@@ -148,16 +154,19 @@ class PontoAjuda(ScrapedItemBase, table=True):
     lng: float | None = None
     contato: str | None = None
     horario: str | None = None
-    itens: list[str] = Field(default_factory=list, sa_column=Column(ARRAY(Text), nullable=False))
+    itens: list[str] = Field(
+        default_factory=list, sa_column=Column(ARRAY(Text), nullable=False)
+    )
 
 
 # ---------------------------------------------------------------------------
 # Pet
 # ---------------------------------------------------------------------------
 
+
 class Pet(ScrapedItemBase, table=True):
     id: str = Field(primary_key=True)
-    tipo: str = Field(index=True)           # perdido | encontrado | adocao
+    tipo: str = Field(index=True)  # perdido | encontrado | adocao
     nome: str | None = None
     especie: str | None = Field(default=None, index=True)
     porte: str | None = None
@@ -173,11 +182,14 @@ class Pet(ScrapedItemBase, table=True):
 # FeedItem
 # ---------------------------------------------------------------------------
 
+
 class FeedItem(ScrapedItemBase, table=True):
     __tablename__ = "feed_item"
 
     id: str = Field(primary_key=True)
-    tipo: str = Field(index=True)           # alerta | noticia | relatorio | interdicao | vistoria | transacao
+    tipo: str = Field(
+        index=True
+    )  # alerta | noticia | relatorio | interdicao | vistoria | transacao
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None
@@ -189,9 +201,12 @@ class FeedItem(ScrapedItemBase, table=True):
 # Outro
 # ---------------------------------------------------------------------------
 
+
 class Outro(ScrapedItemBase, table=True):
     id: str = Field(primary_key=True)
-    tipo: str = Field(index=True)           # contato_emergencia | link | pix | saldo | registro | formulario | vaquinha
+    tipo: str = Field(
+        index=True
+    )  # contato_emergencia | link | pix | saldo | registro | formulario | vaquinha
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None
@@ -201,6 +216,7 @@ class Outro(ScrapedItemBase, table=True):
 # ---------------------------------------------------------------------------
 # User-submitted data — schemas de input (sem metadados de scraping)
 # ---------------------------------------------------------------------------
+
 
 class PedidoCreate(SQLModel):
     titulo: str | None = None
@@ -234,7 +250,7 @@ class VoluntarioUpdate(VoluntarioCreate):
 
 
 class PontoAjudaCreate(SQLModel):
-    tipo: str | None = None   # abrigo | coleta | doacao | entidade | abrigo_animal
+    tipo: str | None = None  # abrigo | coleta | doacao | entidade | abrigo_animal
     nome: str | None = None
     descricao: str | None = None
     endereco: str | None = None
@@ -296,6 +312,7 @@ class OutroUpdate(OutroCreate):
 # ---------------------------------------------------------------------------
 # API Key
 # ---------------------------------------------------------------------------
+
 
 class ApiKey(SQLModel, table=True):
     __tablename__ = "api_key"
