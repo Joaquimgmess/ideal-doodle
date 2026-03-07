@@ -1,0 +1,5 @@
+services:
+  api:
+    volumes:
+      - ./backend:/app
+      - /app/.venv  # Mantém a proteção da pasta virtual do docker <----

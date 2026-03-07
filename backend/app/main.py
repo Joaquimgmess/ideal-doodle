@@ -11,6 +11,8 @@ from app.core.config import settings
 from app.cron import build_scheduler
 from app.workers.scraper_worker import run_all_scrapers
 
+from app.cron import atualizar_kpi_voluntarios
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -21,8 +23,10 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = build_scheduler()
+
     if settings.SCRAPER_RUN_ON_STARTUP:
         asyncio.create_task(run_all_scrapers())
+        
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
