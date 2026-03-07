@@ -316,6 +316,40 @@ class OutroUpdate(OutroCreate):
 
 
 # ---------------------------------------------------------------------------
+# Evento
+# ---------------------------------------------------------------------------
+
+
+class Evento(ScrapedItemBase, table=True):
+    id: str = Field(primary_key=True)
+    tipo: str = Field(index=True)  # indicacao_recurso | ...
+    destinatario: str = Field(index=True)  # portal que receberá o evento
+    status: str = Field(
+        default="aberto", index=True
+    )  # aberto | em_atendimento | atendido
+    metadados: dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)  # type: ignore
+
+
+class EventoCreate(SQLModel):
+    portal_name: str | None = None
+    tipo: str
+    destinatario: str
+    metadados: dict[str, Any] = Field(default_factory=dict)
+
+
+class EventoUpdate(SQLModel):
+    tipo: str | None = None
+    destinatario: str | None = None
+    status: str | None = None
+    metadados: dict[str, Any] | None = None
+
+
+class EventoList(SQLModel):
+    data: list[Evento]
+    count: int
+
+
+# ---------------------------------------------------------------------------
 # API Key
 # ---------------------------------------------------------------------------
 

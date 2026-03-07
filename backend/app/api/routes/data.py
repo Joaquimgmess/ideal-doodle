@@ -6,6 +6,10 @@ from sqlmodel import col, func, select
 
 from app.api.deps import ApiKeyDep, SessionDep
 from app.models import (
+    Evento,
+    EventoCreate,
+    EventoList,
+    EventoUpdate,
     FeedItem,
     FeedItemCreate,
     FeedItemList,
@@ -551,6 +555,97 @@ async def patch_outro(
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")
+    if item.portal_id != api_key.slug:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+# ---------------------------------------------------------------------------
+# Eventos
+# ---------------------------------------------------------------------------
+
+
+@router.get("/eventos")
+async def list_eventos(
+    session: SessionDep,
+    api_key: ApiKeyDep,
+    skip: int = 0,
+    limit: int = Query(default=100, le=500),
+    portal_id: str | None = None,
+    destinatario: str | None = None,
+    tipo: str | None = None,
+    status: str | None = None,
+) -> EventoList:
+    q = select(Evento)
+    if portal_id:
+        q = q.where(Evento.portal_id == portal_id)
+    if destinatario:
+        q = q.where(Evento.destinatario == destinatario)
+    if tipo:
+        q = q.where(Evento.tipo == tipo)
+    if status:
+        q = q.where(Evento.status == status)
+
+    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
+    items = (
+        await session.exec(
+            q.order_by(col(Evento.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
+    return EventoList(data=items, count=count)
+
+
+@router.post("/eventos", status_code=201)
+async def create_evento(
+    session: SessionDep, api_key: ApiKeyDep, data: EventoCreate
+) -> Evento:
+    item = Evento(
+        id=_user_id(api_key.slug, "evento"),
+        portal_id=api_key.slug,
+        portal_name=data.portal_name or api_key.name,
+        portal_url=_USER_PORTAL_URL,
+        scraped_at=_now(),
+        tipo=data.tipo,
+        destinatario=data.destinatario,
+        metadados=data.metadados,
+    )
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.put("/eventos/{item_id}")
+async def update_evento(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: EventoUpdate
+) -> Evento:
+    item = await session.get(Evento, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
+    if item.portal_id != api_key.slug:
+        raise HTTPException(
+            status_code=403, detail="Sem permissão para alterar este registro"
+        )
+    item.sqlmodel_update(data.model_dump(exclude_unset=True))
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+@router.patch("/eventos/{item_id}")
+async def patch_evento(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: EventoUpdate
+) -> Evento:
+    item = await session.get(Evento, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
     if item.portal_id != api_key.slug:
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
