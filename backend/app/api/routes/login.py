@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
@@ -33,5 +33,5 @@ async def login_access_token(
 
 
 @router.post("/login/test-token", response_model=UserPublic)
-async def test_token(current_user: CurrentUser) -> Any:
+async def test_token(current_user: CurrentUser) -> UserPublic:
     return current_user

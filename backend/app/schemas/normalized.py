@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class BaseItem(BaseModel):
-    id: str                   # portal_id:city:raw_id
+    id: str  # portal_id:city:raw_id
     portal_id: str
     portal_name: str
     portal_url: str
@@ -20,8 +20,8 @@ class Pedido(BaseItem):
     descricao: str | None = None
     categoria: str | None = None
     status: str | None = None
-    nome: str | None = None       # nome de quem pediu
-    contato: str | None = None    # telefone / whatsapp
+    nome: str | None = None  # nome de quem pediu
+    contato: str | None = None  # telefone / whatsapp
     cidade: str | None = None
     bairro: str | None = None
     lat: float | None = None
@@ -41,7 +41,9 @@ class Voluntario(BaseItem):
 
 class PontoAjuda(BaseItem):
     nome: str | None = None
-    tipo: str | None = None       # abrigo | coleta | doacao | entidade | abrigo_animal | ponto
+    tipo: str | None = (
+        None  # abrigo | coleta | doacao | entidade | abrigo_animal | ponto
+    )
     descricao: str | None = None
     endereco: str | None = None
     cidade: str | None = None
@@ -54,9 +56,9 @@ class PontoAjuda(BaseItem):
 
 
 class Pet(BaseItem):
-    tipo: str                     # perdido | encontrado | adocao
-    nome: str | None = None       # nome do pet
-    especie: str | None = None    # cachorro | gato | ...
+    tipo: str  # perdido | encontrado | adocao
+    nome: str | None = None  # nome do pet
+    especie: str | None = None  # cachorro | gato | ...
     porte: str | None = None
     descricao: str | None = None
     status: str | None = None
@@ -67,7 +69,7 @@ class Pet(BaseItem):
 
 
 class FeedItem(BaseItem):
-    tipo: str                     # alerta | noticia | relatorio | interdicao | transacao
+    tipo: str  # alerta | noticia | relatorio | interdicao | transacao
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None
@@ -76,7 +78,7 @@ class FeedItem(BaseItem):
 
 
 class Outro(BaseItem):
-    tipo: str                     # contato_emergencia | link | pix | saldo | registro
+    tipo: str  # contato_emergencia | link | pix | saldo | registro
     titulo: str | None = None
     descricao: str | None = None
     url: str | None = None

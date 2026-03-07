@@ -7,12 +7,24 @@ from sqlmodel import col, func, select
 
 from app.api.deps import ApiKeyDep, SessionDep
 from app.models import (
-    FeedItem, FeedItemCreate, FeedItemUpdate,
-    Outro, OutroCreate, OutroUpdate,
-    Pedido, PedidoCreate, PedidoUpdate,
-    Pet, PetCreate, PetUpdate,
-    PontoAjuda, PontoAjudaCreate, PontoAjudaUpdate,
-    Voluntario, VoluntarioCreate, VoluntarioUpdate,
+    FeedItem,
+    FeedItemCreate,
+    FeedItemUpdate,
+    Outro,
+    OutroCreate,
+    OutroUpdate,
+    Pedido,
+    PedidoCreate,
+    PedidoUpdate,
+    Pet,
+    PetCreate,
+    PetUpdate,
+    PontoAjuda,
+    PontoAjudaCreate,
+    PontoAjudaUpdate,
+    Voluntario,
+    VoluntarioCreate,
+    VoluntarioUpdate,
 )
 
 router = APIRouter(tags=["data"])
@@ -34,6 +46,7 @@ def _user_id(prefix: str, cidade: str | None = None) -> str:
 # helpers
 # ---------------------------------------------------------------------------
 
+
 def _list_response(data: list[Any], count: int) -> dict[str, Any]:
     return {"data": data, "count": count}
 
@@ -41,6 +54,7 @@ def _list_response(data: list[Any], count: int) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Pedidos
 # ---------------------------------------------------------------------------
+
 
 @router.get("/pedidos")
 async def list_pedidos(
@@ -52,7 +66,7 @@ async def list_pedidos(
     cidade: str | None = None,
     categoria: str | None = None,
     status: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Pedido)
     if portal_id:
         q = q.where(Pedido.portal_id == portal_id)
@@ -64,12 +78,18 @@ async def list_pedidos(
         q = q.where(Pedido.status == status)
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(Pedido.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(Pedido.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/pedidos", status_code=201)
-async def create_pedido(session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate) -> Any:
+async def create_pedido(
+    session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate
+) -> Pedido:
     item = Pedido(
         id=_user_id("pedido", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -85,7 +105,9 @@ async def create_pedido(session: SessionDep, api_key: ApiKeyDep, data: PedidoCre
 
 
 @router.put("/pedidos/{item_id}")
-async def update_pedido(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate) -> Any:
+async def update_pedido(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate
+) -> Pedido:
     item = await session.get(Pedido, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
@@ -100,6 +122,7 @@ async def update_pedido(session: SessionDep, api_key: ApiKeyDep, item_id: str, d
 # Voluntários
 # ---------------------------------------------------------------------------
 
+
 @router.get("/voluntarios")
 async def list_voluntarios(
     session: SessionDep,
@@ -109,7 +132,7 @@ async def list_voluntarios(
     portal_id: str | None = None,
     cidade: str | None = None,
     categoria: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Voluntario)
     if portal_id:
         q = q.where(Voluntario.portal_id == portal_id)
@@ -119,12 +142,18 @@ async def list_voluntarios(
         q = q.where(Voluntario.categoria.ilike(f"%{categoria}%"))  # type: ignore[union-attr]
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(Voluntario.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(Voluntario.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/voluntarios", status_code=201)
-async def create_voluntario(session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate) -> Any:
+async def create_voluntario(
+    session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate
+) -> Voluntario:
     item = Voluntario(
         id=_user_id("voluntario", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -140,7 +169,9 @@ async def create_voluntario(session: SessionDep, api_key: ApiKeyDep, data: Volun
 
 
 @router.put("/voluntarios/{item_id}")
-async def update_voluntario(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate) -> Any:
+async def update_voluntario(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate
+) -> Voluntario:
     item = await session.get(Voluntario, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Voluntário não encontrado")
@@ -155,6 +186,7 @@ async def update_voluntario(session: SessionDep, api_key: ApiKeyDep, item_id: st
 # Pontos de Ajuda
 # ---------------------------------------------------------------------------
 
+
 @router.get("/pontos")
 async def list_pontos(
     session: SessionDep,
@@ -164,7 +196,7 @@ async def list_pontos(
     portal_id: str | None = None,
     cidade: str | None = None,
     tipo: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(PontoAjuda)
     if portal_id:
         q = q.where(PontoAjuda.portal_id == portal_id)
@@ -174,12 +206,18 @@ async def list_pontos(
         q = q.where(PontoAjuda.tipo == tipo)
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(PontoAjuda.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(PontoAjuda.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/pontos", status_code=201)
-async def create_ponto(session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate) -> Any:
+async def create_ponto(
+    session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate
+) -> PontoAjuda:
     item = PontoAjuda(
         id=_user_id("ponto", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -195,7 +233,9 @@ async def create_ponto(session: SessionDep, api_key: ApiKeyDep, data: PontoAjuda
 
 
 @router.put("/pontos/{item_id}")
-async def update_ponto(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate) -> Any:
+async def update_ponto(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate
+) -> PontoAjuda:
     item = await session.get(PontoAjuda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
@@ -210,6 +250,7 @@ async def update_ponto(session: SessionDep, api_key: ApiKeyDep, item_id: str, da
 # Pets
 # ---------------------------------------------------------------------------
 
+
 @router.get("/pets")
 async def list_pets(
     session: SessionDep,
@@ -220,7 +261,7 @@ async def list_pets(
     cidade: str | None = None,
     tipo: str | None = None,
     especie: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Pet)
     if portal_id:
         q = q.where(Pet.portal_id == portal_id)
@@ -232,12 +273,16 @@ async def list_pets(
         q = q.where(Pet.especie.ilike(f"%{especie}%"))  # type: ignore[union-attr]
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(Pet.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(Pet.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/pets", status_code=201)
-async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Any:
+async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Pet:
     item = Pet(
         id=_user_id("pet", data.cidade),
         portal_id=_USER_PORTAL_ID,
@@ -253,7 +298,9 @@ async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -
 
 
 @router.put("/pets/{item_id}")
-async def update_pet(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate) -> Any:
+async def update_pet(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate
+) -> Pet:
     item = await session.get(Pet, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Pet não encontrado")
@@ -268,6 +315,7 @@ async def update_pet(session: SessionDep, api_key: ApiKeyDep, item_id: str, data
 # Feed
 # ---------------------------------------------------------------------------
 
+
 @router.get("/feed")
 async def list_feed(
     session: SessionDep,
@@ -277,7 +325,7 @@ async def list_feed(
     portal_id: str | None = None,
     tipo: str | None = None,
     urgente: bool | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(FeedItem)
     if portal_id:
         q = q.where(FeedItem.portal_id == portal_id)
@@ -287,12 +335,18 @@ async def list_feed(
         q = q.where(FeedItem.urgente == urgente)
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(FeedItem.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(FeedItem.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/feed", status_code=201)
-async def create_feed_item(session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate) -> Any:
+async def create_feed_item(
+    session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate
+) -> FeedItem:
     item = FeedItem(
         id=_user_id("feed"),
         portal_id=_USER_PORTAL_ID,
@@ -308,7 +362,9 @@ async def create_feed_item(session: SessionDep, api_key: ApiKeyDep, data: FeedIt
 
 
 @router.put("/feed/{item_id}")
-async def update_feed_item(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate) -> Any:
+async def update_feed_item(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate
+) -> FeedItem:
     item = await session.get(FeedItem, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item de feed não encontrado")
@@ -323,6 +379,7 @@ async def update_feed_item(session: SessionDep, api_key: ApiKeyDep, item_id: str
 # Outros
 # ---------------------------------------------------------------------------
 
+
 @router.get("/outros")
 async def list_outros(
     session: SessionDep,
@@ -331,7 +388,7 @@ async def list_outros(
     limit: int = Query(default=100, le=500),
     portal_id: str | None = None,
     tipo: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     q = select(Outro)
     if portal_id:
         q = q.where(Outro.portal_id == portal_id)
@@ -339,12 +396,18 @@ async def list_outros(
         q = q.where(Outro.tipo == tipo)
 
     count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (await session.exec(q.order_by(col(Outro.scraped_at).desc()).offset(skip).limit(limit))).all()
+    items = (
+        await session.exec(
+            q.order_by(col(Outro.scraped_at).desc()).offset(skip).limit(limit)
+        )
+    ).all()
     return _list_response(items, count)
 
 
 @router.post("/outros", status_code=201)
-async def create_outro(session: SessionDep, api_key: ApiKeyDep, data: OutroCreate) -> Any:
+async def create_outro(
+    session: SessionDep, api_key: ApiKeyDep, data: OutroCreate
+) -> Outro:
     item = Outro(
         id=_user_id("outro"),
         portal_id=_USER_PORTAL_ID,
@@ -360,7 +423,9 @@ async def create_outro(session: SessionDep, api_key: ApiKeyDep, data: OutroCreat
 
 
 @router.put("/outros/{item_id}")
-async def update_outro(session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate) -> Any:
+async def update_outro(
+    session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate
+) -> Outro:
     item = await session.get(Outro, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado")

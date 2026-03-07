@@ -20,7 +20,7 @@ exit /b 1
 echo Criando migration "%2"...
 uv run alembic revision --autogenerate -m "%2"
 exit /b
- 
+
 :up
 echo Aplicando migrations...
 uv run alembic upgrade head

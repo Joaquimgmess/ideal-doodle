@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import httpx
 
 from app.scrapers.base import BaseScraper, ScraperResult

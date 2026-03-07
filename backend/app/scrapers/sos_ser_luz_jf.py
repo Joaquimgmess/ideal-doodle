@@ -22,13 +22,21 @@ class SosSerLuzJfScraper(BaseScraper):
         fields: list[dict] = []
         for inp in form.select("input, textarea, select"):
             name = inp.get("name", "")
-            if name and not name.startswith("authenticity_token") and not name.startswith("utf8"):
+            if (
+                name
+                and not name.startswith("authenticity_token")
+                and not name.startswith("utf8")
+            ):
                 field: dict = {
                     "name": name,
                     "type": inp.get("type", inp.name),
                 }
                 if inp.name == "select":
-                    options = [opt.get_text(strip=True) for opt in inp.select("option") if opt.get("value")]
+                    options = [
+                        opt.get_text(strip=True)
+                        for opt in inp.select("option")
+                        if opt.get("value")
+                    ]
                     field["options"] = options
                 fields.append(field)
 

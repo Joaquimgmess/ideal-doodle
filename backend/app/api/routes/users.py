@@ -1,5 +1,4 @@
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
@@ -27,7 +26,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.post("/signup", response_model=UserPublic)
-async def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+async def register_user(session: SessionDep, user_in: UserRegister) -> UserPublic:
     user = await crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
@@ -40,7 +39,9 @@ async def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-async def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+async def read_users(
+    session: SessionDep, skip: int = 0, limit: int = 100
+) -> UsersPublic:
     count = (await session.exec(select(func.count()).select_from(User))).one()
     users = (
         await session.exec(
@@ -53,7 +54,7 @@ async def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> An
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-async def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+async def create_user(*, session: SessionDep, user_in: UserCreate) -> UserPublic:
     user = await crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -66,9 +67,11 @@ async def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
 @router.patch("/me", response_model=UserPublic)
 async def update_user_me(
     *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
-) -> Any:
+) -> User:
     if user_in.email:
-        existing_user = await crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = await crud.get_user_by_email(
+            session=session, email=user_in.email
+        )
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
@@ -84,7 +87,7 @@ async def update_user_me(
 @router.patch("/me/password", response_model=Message)
 async def update_password_me(
     *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
-) -> Any:
+) -> Message:
     verified, _ = verify_password(body.current_password, current_user.hashed_password)
     if not verified:
         raise HTTPException(status_code=400, detail="Incorrect password")
@@ -99,12 +102,12 @@ async def update_password_me(
 
 
 @router.get("/me", response_model=UserPublic)
-async def read_user_me(current_user: CurrentUser) -> Any:
+async def read_user_me(current_user: CurrentUser) -> User:
     return current_user
 
 
 @router.delete("/me", response_model=Message)
-async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Message:
     if current_user.is_superuser:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
@@ -117,7 +120,7 @@ async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 @router.get("/{user_id}", response_model=UserPublic)
 async def read_user_by_id(
     user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
-) -> Any:
+) -> User:
     user = await session.get(User, user_id)
     if user == current_user:
         return user
@@ -137,8 +140,11 @@ async def read_user_by_id(
     response_model=UserPublic,
 )
 async def update_user(
-    *, session: SessionDep, user_id: uuid.UUID, user_in: UserUpdate,
-) -> Any:
+    *,
+    session: SessionDep,
+    user_id: uuid.UUID,
+    user_in: UserUpdate,
+) -> User:
     db_user = await session.get(User, user_id)
     if not db_user:
         raise HTTPException(
@@ -146,7 +152,9 @@ async def update_user(
             detail="The user with this id does not exist in the system",
         )
     if user_in.email:
-        existing_user = await crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = await crud.get_user_by_email(
+            session=session, email=user_in.email
+        )
         if existing_user and existing_user.id != user_id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
