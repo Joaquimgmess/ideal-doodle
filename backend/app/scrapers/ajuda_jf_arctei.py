@@ -53,14 +53,14 @@ class AjudaJfArcteiScraper(BaseScraper):
         )
 
         actions = ["listRequests", "listPoints", "listVolunteers", "listVistorias"]
-        keys    = ["requests",     "points",     "volunteers",     "vistorias"]
+        keys = ["requests", "points", "volunteers", "vistorias"]
 
         responses = await asyncio.gather(
             *[self._fetch_action(a) for a in actions],
             return_exceptions=True,
         )
 
-        for key, res in zip(keys, responses):
+        for key, res in zip(keys, responses, strict=True):
             if isinstance(res, Exception):
                 result.errors.append(f"{key}: {res}")
                 result.data[key] = []

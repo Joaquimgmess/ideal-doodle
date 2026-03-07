@@ -26,9 +26,12 @@ class InterdicoesJfScraper(BaseScraper):
         try:
             interdicoes = await self.get_interdicoes()
             interditadas = [i for i in interdicoes if i.get("Status") == "INTERDITADA"]
-            parciais = [i for i in interdicoes if i.get("Status") == "PARCIALMENTE LIVRE"]
+            parciais = [
+                i for i in interdicoes if i.get("Status") == "PARCIALMENTE LIVRE"
+            ]
             livres = [
-                i for i in interdicoes
+                i
+                for i in interdicoes
                 if i.get("Status", "").upper() in ("LIVRE", "LIBERADA", "VIA LIBERADA")
             ]
             result.data = {

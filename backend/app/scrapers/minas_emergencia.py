@@ -16,7 +16,9 @@ CITY_SLUG_TO_NAME: dict[str, str] = {
 }
 
 
-def _extract_pontos_from_firestore_response(body: bytes, cidade: str) -> list[dict[str, Any]]:
+def _extract_pontos_from_firestore_response(
+    body: bytes, cidade: str
+) -> list[dict[str, Any]]:
     try:
         payload = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError):
@@ -69,7 +71,9 @@ def _firestore_value(field: dict[str, Any]) -> Any:
     return None
 
 
-def _parse_firestore_fields(fields: dict[str, Any], cidade: str) -> dict[str, Any] | None:
+def _parse_firestore_fields(
+    fields: dict[str, Any], cidade: str
+) -> dict[str, Any] | None:
     if not fields:
         return None
 
@@ -102,7 +106,11 @@ def _parse_firestore_fields(fields: dict[str, Any], cidade: str) -> dict[str, An
         "lat": lat,
         "lng": lng,
         "itens": itens,
-        "contato": get("contato") or get("telefone") or get("phone") or get("contact") or "",
+        "contato": get("contato")
+        or get("telefone")
+        or get("phone")
+        or get("contact")
+        or "",
         "horario": get("horario") or get("horarios") or get("funcionamento") or "",
         "cidade": cidade,
     }
@@ -114,7 +122,9 @@ def _extract_pontos_from_dom(dom_text: str, cidade: str) -> list[dict[str, Any]]
 
     pontos: list[dict[str, Any]] = []
 
-    match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', dom_text, re.DOTALL)
+    match = re.search(
+        r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', dom_text, re.DOTALL
+    )
     if not match:
         return pontos
 
@@ -129,7 +139,12 @@ def _extract_pontos_from_dom(dom_text: str, cidade: str) -> list[dict[str, Any]]
                 if isinstance(item, dict):
                     if "nome" in item or "name" in item or "endereco" in item:
                         ponto = _parse_firestore_fields(
-                            {k: {"stringValue": v} if isinstance(v, str) else {"doubleValue": v} for k, v in item.items()},
+                            {
+                                k: {"stringValue": v}
+                                if isinstance(v, str)
+                                else {"doubleValue": v}
+                                for k, v in item.items()
+                            },
                             cidade,
                         )
                         if ponto:

@@ -1,6 +1,6 @@
+from app.scrapers.ajuda_emjf import AjudaEmjfScraper
 from app.scrapers.ajuda_imediata import AjudaImediataScraper
 from app.scrapers.ajuda_jf_arctei import AjudaJfArcteiScraper
-from app.scrapers.ajuda_emjf import AjudaEmjfScraper
 from app.scrapers.ajude_io import AjudeIoScraper
 from app.scrapers.ajude_jf import AjudeJfScraper
 from app.scrapers.ajude_juiz_de_fora import AjudeJuizDeForaScraper
