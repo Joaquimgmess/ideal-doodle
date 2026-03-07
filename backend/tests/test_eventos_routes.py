@@ -97,8 +97,50 @@ async def test_patch_evento(client: AsyncClient, api_key_headers: dict[str, str]
 
 
 # ---------------------------------------------------------------------------
-# Permissões — outro portal não pode alterar
+# Permissões — remetente OU destinatário podem alterar, terceiros não
 # ---------------------------------------------------------------------------
+
+
+async def test_update_evento_by_destinatario(
+    client: AsyncClient,
+    api_key_headers: dict[str, str],
+    other_api_key_headers: dict[str, str],
+):
+    create = await client.post(
+        f"{API}/eventos",
+        headers=api_key_headers,
+        json={"tipo": "indicacao_recurso", "destinatario": "other-key"},
+    )
+    item_id = create.json()["id"]
+
+    response = await client.put(
+        f"{API}/eventos/{item_id}",
+        headers=other_api_key_headers,
+        json={"status": "atendido"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "atendido"
+
+
+async def test_patch_evento_by_destinatario(
+    client: AsyncClient,
+    api_key_headers: dict[str, str],
+    other_api_key_headers: dict[str, str],
+):
+    create = await client.post(
+        f"{API}/eventos",
+        headers=api_key_headers,
+        json={"tipo": "indicacao_recurso", "destinatario": "other-key"},
+    )
+    item_id = create.json()["id"]
+
+    response = await client.patch(
+        f"{API}/eventos/{item_id}",
+        headers=other_api_key_headers,
+        json={"status": "em_atendimento"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "em_atendimento"
 
 
 async def test_update_evento_forbidden(

@@ -628,7 +628,7 @@ async def update_evento(
     item = await session.get(Evento, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
-    if item.portal_id != api_key.slug:
+    if api_key.slug not in (item.portal_id, item.destinatario):
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
@@ -646,7 +646,7 @@ async def patch_evento(
     item = await session.get(Evento, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
-    if item.portal_id != api_key.slug:
+    if api_key.slug not in (item.portal_id, item.destinatario):
         raise HTTPException(
             status_code=403, detail="Sem permissão para alterar este registro"
         )
