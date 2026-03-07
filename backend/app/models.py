@@ -219,6 +219,7 @@ class Outro(ScrapedItemBase, table=True):
 
 
 class PedidoCreate(SQLModel):
+    portal_name: str | None = None
     titulo: str | None = None
     descricao: str | None = None
     categoria: str | None = None
@@ -235,6 +236,7 @@ class PedidoUpdate(PedidoCreate):
 
 
 class VoluntarioCreate(SQLModel):
+    portal_name: str | None = None
     nome: str | None = None
     descricao: str | None = None
     categoria: str | None = None
@@ -250,6 +252,7 @@ class VoluntarioUpdate(VoluntarioCreate):
 
 
 class PontoAjudaCreate(SQLModel):
+    portal_name: str | None = None
     tipo: str | None = None  # abrigo | coleta | doacao | entidade | abrigo_animal
     nome: str | None = None
     descricao: str | None = None
@@ -268,6 +271,7 @@ class PontoAjudaUpdate(PontoAjudaCreate):
 
 
 class PetCreate(SQLModel):
+    portal_name: str | None = None
     tipo: str  # perdido | encontrado | adocao
     nome: str | None = None
     especie: str | None = None
@@ -284,6 +288,7 @@ class PetUpdate(PetCreate):
 
 
 class FeedItemCreate(SQLModel):
+    portal_name: str | None = None
     tipo: str  # alerta | noticia | relatorio
     titulo: str | None = None
     descricao: str | None = None
@@ -298,6 +303,7 @@ class FeedItemUpdate(FeedItemCreate):
 
 
 class OutroCreate(SQLModel):
+    portal_name: str | None = None
     tipo: str  # contato_emergencia | link | pix | saldo | registro | formulario | vaquinha
     titulo: str | None = None
     descricao: str | None = None

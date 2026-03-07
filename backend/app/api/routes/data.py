@@ -34,7 +34,6 @@ from app.models import (
 
 router = APIRouter(tags=["data"])
 
-_USER_PORTAL_NAME = "Contribuição via API"
 _USER_PORTAL_URL = ""
 
 
@@ -88,10 +87,10 @@ async def create_pedido(
     item = Pedido(
         id=_user_id(api_key.name, "pedido", data.cidade),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
@@ -174,10 +173,10 @@ async def create_voluntario(
     item = Voluntario(
         id=_user_id(api_key.name, "voluntario", data.cidade),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
@@ -260,10 +259,10 @@ async def create_ponto(
     item = PontoAjuda(
         id=_user_id(api_key.name, "ponto", data.cidade),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
@@ -347,10 +346,10 @@ async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -
     item = Pet(
         id=_user_id(api_key.name, "pet", data.cidade),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
@@ -433,10 +432,10 @@ async def create_feed_item(
     item = FeedItem(
         id=_user_id(api_key.name, "feed"),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
@@ -516,10 +515,10 @@ async def create_outro(
     item = Outro(
         id=_user_id(api_key.name, "outro"),
         portal_id=api_key.name,
-        portal_name=_USER_PORTAL_NAME,
+        portal_name=data.portal_name or api_key.name,
         portal_url=_USER_PORTAL_URL,
         scraped_at=_now(),
-        **data.model_dump(),
+        **data.model_dump(exclude={"portal_name"}),
     )
     session.add(item)
     await session.commit()
