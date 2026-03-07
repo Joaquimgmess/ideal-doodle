@@ -88,16 +88,25 @@ todo! importar rotas `rust`
 |--------|------|------|-----------|
 | `GET` | `/api/v1/pedidos` | API Key | Lista pedidos de socorro |
 | `POST` | `/api/v1/pedidos` | API Key | Cria pedido |
+| `PUT/PATCH` | `/api/v1/pedidos/{id}` | API Key | Atualiza pedido (só o portal que criou) |
 | `GET` | `/api/v1/voluntarios` | API Key | Lista voluntários |
 | `POST` | `/api/v1/voluntarios` | API Key | Cadastra voluntário |
+| `PUT/PATCH` | `/api/v1/voluntarios/{id}` | API Key | Atualiza voluntário (só o portal que criou) |
 | `GET` | `/api/v1/pontos` | API Key | Lista pontos de ajuda |
 | `POST` | `/api/v1/pontos` | API Key | Cria ponto de ajuda |
+| `PUT/PATCH` | `/api/v1/pontos/{id}` | API Key | Atualiza ponto (só o portal que criou) |
 | `GET` | `/api/v1/pets` | API Key | Lista pets (perdidos/encontrados/adoção) |
 | `POST` | `/api/v1/pets` | API Key | Cadastra pet |
+| `PUT/PATCH` | `/api/v1/pets/{id}` | API Key | Atualiza pet (só o portal que criou) |
 | `GET` | `/api/v1/feed` | API Key | Lista alertas e notícias |
 | `POST` | `/api/v1/feed` | API Key | Cria item no feed |
+| `PUT/PATCH` | `/api/v1/feed/{id}` | API Key | Atualiza item do feed (só o portal que criou) |
 | `GET` | `/api/v1/outros` | API Key | Lista contatos, links, vaquinhas |
 | `POST` | `/api/v1/outros` | API Key | Cria item |
+| `PUT/PATCH` | `/api/v1/outros/{id}` | API Key | Atualiza item (só o portal que criou) |
+| `GET` | `/api/v1/eventos` | API Key | Lista eventos entre portais |
+| `POST` | `/api/v1/eventos` | API Key | Cria evento (ex: indicação de doador) |
+| `PUT/PATCH` | `/api/v1/eventos/{id}` | API Key | Atualiza evento (remetente ou destinatário) |
 | `POST` | `/api/v1/users/signup` | — | Cria conta de desenvolvedor |
 | `POST` | `/api/v1/login/access-token` | — | Login (retorna JWT) |
 | `POST` | `/api/v1/api-keys` | — | Registra API Key |
