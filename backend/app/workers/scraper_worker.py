@@ -1,8 +1,8 @@
 import asyncio
-import logging
 from typing import Any
 
 import httpx
+import structlog
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -52,7 +52,7 @@ from app.scrapers import (
 )
 from app.scrapers.normalizer import normalize_all
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger(__name__)
 
 SCRAPERS = [
     EmergenciaMgScraper,
@@ -93,33 +93,52 @@ async def _run_one(cls) -> ScraperResult:
         result = await scraper.scrape()
         result.resolve_status()
 
-        level = logging.WARNING if result.errors else logging.INFO
-        logger.log(
-            level,
-            "[%s] done — status=%s errors=%d",
-            scraper.portal_name,
-            result.status.value,
-            len(result.errors),
+        log = logger.warning if result.errors else logger.info
+        log(
+            "scraper_done",
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            status=result.status.value,
+            error_count=len(result.errors),
         )
         return result
 
     except httpx.TimeoutException as exc:
-        logger.error("[%s] timeout: %s", scraper.portal_name, exc)
+        logger.error(
+            "scraper_timeout",
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            error=str(exc),
+        )
         return _error_result(scraper, f"timeout: {exc}")
     except httpx.HTTPStatusError as exc:
         logger.error(
-            "[%s] http %d: %s",
-            scraper.portal_name,
-            exc.response.status_code,
-            exc,
+            "scraper_http_error",
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            status_code=exc.response.status_code,
+            error=str(exc),
         )
         return _error_result(scraper, f"http_{exc.response.status_code}: {exc}")
     except httpx.HTTPError as exc:
-        logger.error("[%s] connection error: %s", scraper.portal_name, exc)
+        logger.error(
+            "scraper_connection_error",
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            error=str(exc),
+        )
         return _error_result(scraper, f"connection: {exc}")
     except Exception as exc:
-        logger.error(
-            "[%s] unexpected error: %s", scraper.portal_name, exc, exc_info=True
+        logger.exception(
+            "scraper_unexpected_error",
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            error=str(exc),
         )
         return _error_result(scraper, f"unexpected: {exc}")
 
@@ -167,7 +186,7 @@ async def _persist(
 
 
 async def run_all_scrapers(batch_size: int = 5) -> list[ScraperResult]:
-    logger.info("Scraper worker started (%d portais)", len(SCRAPERS))
+    logger.info("scraper_worker_started", total_portals=len(SCRAPERS))
     all_results: list[ScraperResult] = []
     batches = [
         SCRAPERS[i : i + batch_size] for i in range(0, len(SCRAPERS), batch_size)
@@ -177,15 +196,10 @@ async def run_all_scrapers(batch_size: int = 5) -> list[ScraperResult]:
         all_results.extend(batch_results)
 
     ok = sum(1 for r in all_results if r.status == ScraperStatus.SUCCESS)
-    logger.info("Scraper worker done: %d/%d OK", ok, len(all_results))
+    logger.info("scraper_worker_done", ok=ok, total=len(all_results))
 
     async with AsyncSession(engine) as session:
         counts = await _persist(session, all_results)
 
-    total = sum(counts.values())
-    logger.info(
-        "Persisted %d items — %s",
-        total,
-        " | ".join(f"{k}={v}" for k, v in counts.items()),
-    )
+    logger.info("scraper_persisted", total_items=sum(counts.values()), **counts)
     return all_results

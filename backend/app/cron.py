@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
@@ -9,7 +8,7 @@ from app.core.db import engine
 from app.models import KPIHistory, Voluntario
 from app.workers.scraper_worker import run_all_scrapers
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger(__name__)
 
 
 def build_scheduler() -> AsyncIOScheduler:
@@ -30,26 +29,28 @@ def build_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
-    logger.info("Cron configurado: interval=%dh", settings.SCRAPER_INTERVAL_HOURS)
+    logger.info(
+        "cron_configured",
+        scraper_interval_hours=settings.SCRAPER_INTERVAL_HOURS,
+        kpis_interval_hours=settings.KPIS_INTERVAL_HOURS,
+    )
     return scheduler
 
 
 async def atualizar_kpi_voluntarios():
-        async with AsyncSession(engine) as session:
-            try:
-                statement = select(func.count()).select_from(Voluntario)
-                result = await session.execute(statement)
-                total = result.scalar()
+    async with AsyncSession(engine) as session:
+        try:
+            statement = select(func.count()).select_from(Voluntario)
+            result = await session.execute(statement)
+            total = result.scalar()
 
-                nova_kpi = KPIHistory(nome_kpi="total_voluntarios", valor=total)
-                session.add(nova_kpi)
+            nova_kpi = KPIHistory(nome_kpi="total_voluntarios", valor=total)
+            session.add(nova_kpi)
 
-                await session.commit()
-                logger.info("KPI de voluntários atualizada: %d", total)
+            await session.commit()
+            logger.info("kpi_updated", kpi="total_voluntarios", valor=total)
 
-            #Correção: Adicionado tratamento de exceção para garantir rollback dentro do bloco
-            except Exception as e:
-                await session.rollback()
-                logger.error("Erro ao processar KPI de voluntários: %s", e)
-                raise
-
+        except Exception as e:
+            await session.rollback()
+            logger.exception("kpi_error", kpi="total_voluntarios", error=str(e))
+            raise

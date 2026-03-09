@@ -1,7 +1,8 @@
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
+import structlog
+from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
@@ -9,11 +10,13 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.logging import setup_logging
+from app.core.middleware import RequestLoggingMiddleware
 from app.cron import build_scheduler
 from app.workers.scraper_worker import run_all_scrapers
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+setup_logging()
+logger = structlog.stdlib.get_logger(__name__)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -39,6 +42,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Middleware — ordem importa (último adicionado = primeiro executado)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(CorrelationIdMiddleware)
+
 if settings.all_cors_origins:
     app.add_middleware(
         CORSMiddleware,
@@ -58,10 +65,11 @@ if settings.ENVIRONMENT != "local":
         request: Request, exc: Exception
     ) -> JSONResponse:
         logger.exception(
-            "Unhandled exception: %s %s — %s",
-            request.method,
-            request.url.path,
-            exc,
+            "unhandled_exception",
+            method=request.method,
+            path=request.url.path,
+            error=str(exc),
+            error_type=type(exc).__name__,
         )
         return JSONResponse(
             status_code=500,
