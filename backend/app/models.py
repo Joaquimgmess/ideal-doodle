@@ -236,7 +236,7 @@ class PedidoCreate(SQLModel):
     bairro: str | None = None
     lat: float | None = None
     lng: float | None = None
-    data_criacao: datetime | None = Field(default=None, sa_type=DateTime(timezone=True)) 
+    data_criacao: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
     origem: str | None = None
     categoria_item: str | None = None
     quantidade: int | None = None
