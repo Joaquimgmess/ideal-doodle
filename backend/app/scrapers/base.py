@@ -24,6 +24,17 @@ class ScraperResult:
     data: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
+    def resolve_status(self) -> None:
+        has_data = any(bool(v) for v in self.data.values() if isinstance(v, list))
+        if self.errors and has_data:
+            self.status = ScraperStatus.PARTIAL
+        elif self.errors:
+            self.status = ScraperStatus.ERROR
+        elif not has_data:
+            self.status = ScraperStatus.EMPTY
+        else:
+            self.status = ScraperStatus.SUCCESS
+
 
 class BaseScraper(ABC):
     portal_id: str

@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import engine
+from app.core.exceptions import ScraperError, ScraperHTTPError, ScraperTimeoutError
 from app.models import (
     FeedItem as DBFeedItem,
 )
@@ -80,17 +81,7 @@ async def _run_one(cls) -> ScraperResult:
     scraper = cls()
     try:
         result = await scraper.scrape()
-
-        # Determinar status baseado em dados e erros
-        has_data = any(bool(v) for v in result.data.values() if isinstance(v, list))
-        if result.errors and has_data:
-            result.status = ScraperStatus.PARTIAL
-        elif result.errors:
-            result.status = ScraperStatus.ERROR
-        elif not has_data:
-            result.status = ScraperStatus.EMPTY
-        else:
-            result.status = ScraperStatus.SUCCESS
+        result.resolve_status()
 
         level = logging.WARNING if result.errors else logging.INFO
         logger.log(
@@ -104,13 +95,7 @@ async def _run_one(cls) -> ScraperResult:
 
     except httpx.TimeoutException as exc:
         logger.error("[%s] timeout: %s", scraper.portal_name, exc)
-        return ScraperResult(
-            portal_id=scraper.portal_id,
-            portal_name=scraper.portal_name,
-            url=scraper.base_url,
-            status=ScraperStatus.ERROR,
-            errors=[f"timeout: {exc}"],
-        )
+        raise ScraperTimeoutError(scraper.portal_id, str(exc)) from exc
     except httpx.HTTPStatusError as exc:
         logger.error(
             "[%s] http %d: %s",
@@ -118,24 +103,18 @@ async def _run_one(cls) -> ScraperResult:
             exc.response.status_code,
             exc,
         )
-        return ScraperResult(
-            portal_id=scraper.portal_id,
-            portal_name=scraper.portal_name,
-            url=scraper.base_url,
-            status=ScraperStatus.ERROR,
-            errors=[f"http_{exc.response.status_code}: {exc}"],
-        )
+        raise ScraperHTTPError(
+            scraper.portal_id, str(exc), status_code=exc.response.status_code
+        ) from exc
     except httpx.HTTPError as exc:
         logger.error("[%s] connection error: %s", scraper.portal_name, exc)
-        return ScraperResult(
-            portal_id=scraper.portal_id,
-            portal_name=scraper.portal_name,
-            url=scraper.base_url,
-            status=ScraperStatus.ERROR,
-            errors=[f"connection: {exc}"],
-        )
+        raise ScraperHTTPError(scraper.portal_id, str(exc)) from exc
+    except ScraperError:
+        raise
     except Exception as exc:
-        logger.error("[%s] unexpected error: %s", scraper.portal_name, exc)
+        logger.error(
+            "[%s] unexpected error: %s", scraper.portal_name, exc, exc_info=True
+        )
         return ScraperResult(
             portal_id=scraper.portal_id,
             portal_name=scraper.portal_name,
@@ -194,10 +173,25 @@ async def run_all_scrapers(batch_size: int = 5) -> list[ScraperResult]:
         SCRAPERS[i : i + batch_size] for i in range(0, len(SCRAPERS), batch_size)
     ]
     for batch in batches:
-        batch_results = await asyncio.gather(*[_run_one(cls) for cls in batch])
-        all_results.extend(batch_results)
+        batch_results = await asyncio.gather(
+            *[_run_one(cls) for cls in batch], return_exceptions=True
+        )
+        for cls, result in zip(batch, batch_results, strict=True):
+            if isinstance(result, BaseException):
+                scraper = cls()
+                all_results.append(
+                    ScraperResult(
+                        portal_id=scraper.portal_id,
+                        portal_name=scraper.portal_name,
+                        url=scraper.base_url,
+                        status=ScraperStatus.ERROR,
+                        errors=[f"{type(result).__name__}: {result}"],
+                    )
+                )
+            else:
+                all_results.append(result)
 
-    ok = sum(1 for r in all_results if not r.errors)
+    ok = sum(1 for r in all_results if r.status == ScraperStatus.SUCCESS)
     logger.info("Scraper worker done: %d/%d OK", ok, len(all_results))
 
     async with AsyncSession(engine) as session:

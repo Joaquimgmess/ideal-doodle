@@ -51,16 +51,19 @@ if settings.all_cors_origins:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error(
-        "Unhandled exception: %s %s — %s: %s",
-        request.method,
-        request.url.path,
-        type(exc).__name__,
-        exc,
-    )
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Erro interno do servidor"},
-    )
+if settings.ENVIRONMENT != "local":
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        logger.exception(
+            "Unhandled exception: %s %s — %s",
+            request.method,
+            request.url.path,
+            exc,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro interno do servidor"},
+        )
