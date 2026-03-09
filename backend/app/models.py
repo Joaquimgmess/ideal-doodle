@@ -8,8 +8,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 # para usar no sistema de cron e kpis, para marcar quando os dados foram atualizados pela última vez
-from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field
 
 def get_datetime_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -407,6 +405,6 @@ class ApiKeyCreated(ApiKeyPublic):
 #----------------------------------------------------------------------------
 class KPIHistory(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    nome_kpi: str          
-    valor: int             
+    nome_kpi: str
+    valor: int
     data_registro: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
