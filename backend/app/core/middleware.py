@@ -9,13 +9,14 @@ from starlette.responses import Response
 
 logger = structlog.stdlib.get_logger("app.requests")
 
-_SKIP_PATHS = {"/health-check", "/docs", "/openapi.json", "/redoc"}
+_SKIP_PATHS = {"/docs", "/redoc"}
+_SKIP_SUFFIXES = ("/health-check/", "/ready/", "/openapi.json")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         path = request.url.path
-        if path in _SKIP_PATHS:
+        if path in _SKIP_PATHS or path.endswith(tuple(_SKIP_SUFFIXES)):
             return await call_next(request)
 
         start = time.perf_counter()
