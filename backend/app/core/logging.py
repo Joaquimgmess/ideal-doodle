@@ -4,8 +4,19 @@ import logging
 import sys
 
 import structlog
+from asgi_correlation_id import correlation_id
 
 from app.core.config import settings
+
+
+def add_correlation_id(
+    _logger: logging.Logger, _method_name: str, event_dict: dict
+) -> dict:
+    """Injeta correlation_id do request atual nos logs."""
+    cid = correlation_id.get()
+    if cid:
+        event_dict["correlation_id"] = cid
+    return event_dict
 
 
 def setup_logging() -> None:
@@ -19,6 +30,7 @@ def setup_logging() -> None:
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
+        add_correlation_id,
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),

@@ -9,19 +9,18 @@ from starlette.responses import Response
 
 logger = structlog.stdlib.get_logger("app.requests")
 
+_SKIP_PATHS = {"/health-check", "/docs", "/openapi.json", "/redoc"}
+
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        start = time.perf_counter()
-
-        response = await call_next(request)
-
-        duration_ms = round((time.perf_counter() - start) * 1000, 2)
-
-        # Não logar health check e docs
         path = request.url.path
-        if path in ("/health-check", "/docs", "/openapi.json", "/redoc"):
-            return response
+        if path in _SKIP_PATHS:
+            return await call_next(request)
+
+        start = time.perf_counter()
+        response = await call_next(request)
+        duration_ms = round((time.perf_counter() - start) * 1000, 2)
 
         logger.info(
             "request",
