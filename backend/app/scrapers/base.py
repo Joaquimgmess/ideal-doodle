@@ -1,9 +1,17 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any
 
 import httpx
+
+
+class ScraperStatus(str, Enum):
+    SUCCESS = "success"  # dados coletados sem erros
+    PARTIAL = "partial"  # dados coletados com erros parciais
+    EMPTY = "empty"  # sem dados (legítimo, portal vazio)
+    ERROR = "error"  # falha total
 
 
 @dataclass
@@ -11,6 +19,7 @@ class ScraperResult:
     portal_id: str
     portal_name: str
     url: str
+    status: ScraperStatus = ScraperStatus.SUCCESS
     scraped_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     data: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)

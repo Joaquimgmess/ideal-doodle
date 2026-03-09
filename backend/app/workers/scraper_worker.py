@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Any
 
+import httpx
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -39,6 +40,7 @@ from app.scrapers import (
     # MinasEmergenciaScraper,  # usa Playwright — desabilitado temporariamente
     OndeDoarScraper,
     ScraperResult,
+    ScraperStatus,
     SosAnimaisMgScraper,
     SosJfOnlineScraper,
     SosJfOrgScraper,
@@ -78,18 +80,68 @@ async def _run_one(cls) -> ScraperResult:
     scraper = cls()
     try:
         result = await scraper.scrape()
+
+        # Determinar status baseado em dados e erros
+        has_data = any(bool(v) for v in result.data.values() if isinstance(v, list))
+        if result.errors and has_data:
+            result.status = ScraperStatus.PARTIAL
+        elif result.errors:
+            result.status = ScraperStatus.ERROR
+        elif not has_data:
+            result.status = ScraperStatus.EMPTY
+        else:
+            result.status = ScraperStatus.SUCCESS
+
         level = logging.WARNING if result.errors else logging.INFO
         logger.log(
-            level, "[%s] done — errors=%d", scraper.portal_name, len(result.errors)
+            level,
+            "[%s] done — status=%s errors=%d",
+            scraper.portal_name,
+            result.status.value,
+            len(result.errors),
         )
         return result
-    except Exception as exc:
-        logger.error("[%s] failed: %s", scraper.portal_name, exc)
+
+    except httpx.TimeoutException as exc:
+        logger.error("[%s] timeout: %s", scraper.portal_name, exc)
         return ScraperResult(
             portal_id=scraper.portal_id,
             portal_name=scraper.portal_name,
             url=scraper.base_url,
-            errors=[str(exc)],
+            status=ScraperStatus.ERROR,
+            errors=[f"timeout: {exc}"],
+        )
+    except httpx.HTTPStatusError as exc:
+        logger.error(
+            "[%s] http %d: %s",
+            scraper.portal_name,
+            exc.response.status_code,
+            exc,
+        )
+        return ScraperResult(
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            status=ScraperStatus.ERROR,
+            errors=[f"http_{exc.response.status_code}: {exc}"],
+        )
+    except httpx.HTTPError as exc:
+        logger.error("[%s] connection error: %s", scraper.portal_name, exc)
+        return ScraperResult(
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            status=ScraperStatus.ERROR,
+            errors=[f"connection: {exc}"],
+        )
+    except Exception as exc:
+        logger.error("[%s] unexpected error: %s", scraper.portal_name, exc)
+        return ScraperResult(
+            portal_id=scraper.portal_id,
+            portal_name=scraper.portal_name,
+            url=scraper.base_url,
+            status=ScraperStatus.ERROR,
+            errors=[f"unexpected: {exc}"],
         )
 
 
