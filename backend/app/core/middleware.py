@@ -16,7 +16,7 @@ _SKIP_SUFFIXES = ("/health-check/", "/ready/", "/openapi.json")
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         path = request.url.path
-        if path in _SKIP_PATHS or path.endswith(tuple(_SKIP_SUFFIXES)):
+        if path in _SKIP_PATHS or path.endswith(_SKIP_SUFFIXES):
             return await call_next(request)
 
         start = time.perf_counter()

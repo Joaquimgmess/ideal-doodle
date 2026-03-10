@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(run_all_scrapers())
 
     scheduler.start()
+    app.state.scheduler = scheduler
     yield
     scheduler.shutdown(wait=False)
 
