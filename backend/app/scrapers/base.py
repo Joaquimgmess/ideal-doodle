@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -66,7 +67,7 @@ class BaseScraper(ABC):
         self,
         result: ScraperResult,
         key: str,
-        coro,
+        coro: Awaitable[Any],
         *,
         default: Any = None,
     ) -> None:

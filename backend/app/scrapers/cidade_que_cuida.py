@@ -119,7 +119,8 @@ class CidadeQueCuidaScraper(BaseScraper):
                         client, f"&status=eq.publicado&tipo=eq.{tipo}"
                     ),
                 )
-            await self.safe_fetch(result, "entidades", self.get_entidades())
-            await self.safe_fetch(result, "stats", self.get_stats(), default={})
+
+        await self.safe_fetch(result, "entidades", self.get_entidades())
+        await self.safe_fetch(result, "stats", self.get_stats(), default={})
 
         return result

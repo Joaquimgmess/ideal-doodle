@@ -58,6 +58,7 @@ class SosJfOrgScraper(BaseScraper):
     async def scrape(self) -> ScraperResult:
         result = self.create_result()
 
+        # Manual try/except: uma chamada alimenta duas keys (alerts + news)
         try:
             split = await self._get_alerts_news_split()
             result.data.update(split)
