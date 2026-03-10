@@ -99,6 +99,14 @@ class ScrapedItemBase(SQLModel):
     portal_url: str
     scraped_at: datetime = Field(sa_type=DateTime(timezone=True))  # type: ignore
     raw: dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)  # type: ignore
+    created_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    updated_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
 
 
 # ---------------------------------------------------------------------------
