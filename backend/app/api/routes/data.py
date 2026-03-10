@@ -1,8 +1,5 @@
-import uuid
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, HTTPException, Query
-from sqlmodel import col, func, select
+from fastapi import APIRouter, Query
+from sqlmodel import SQLModel
 
 from app.api.deps import ApiKeyDep, SessionDep
 from app.models import (
@@ -35,18 +32,58 @@ from app.models import (
     VoluntarioList,
     VoluntarioUpdate,
 )
+from app.services.data_service import (
+    check_ownership,
+    check_ownership_or_destinatario,
+    create_item,
+    get_item_or_404,
+    list_items,
+    update_item,
+)
 
 router = APIRouter(tags=["data"])
 
-_USER_PORTAL_URL = ""
+
+# ---------------------------------------------------------------------------
+# Helpers de filtro
+# ---------------------------------------------------------------------------
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+def _ilike(field, value: str | None):
+    """Retorna filtro ilike se value não for None."""
+    if value:
+        return field.ilike(f"%{value}%")  # type: ignore[union-attr]
+    return None
 
 
-def _user_id(portal_id: str, prefix: str, cidade: str | None = None) -> str:
-    return f"{portal_id}:{cidade or 'sem-cidade'}:{uuid.uuid4().hex[:12]}"
+def _eq(field, value):
+    """Retorna filtro de igualdade se value não for None."""
+    if value is not None:
+        return field == value
+    return None
+
+
+def _build_filters(*conditions) -> list:
+    """Filtra Nones e retorna lista de condições."""
+    return [c for c in conditions if c is not None]
+
+
+# ---------------------------------------------------------------------------
+# Generic update/patch (owner check)
+# ---------------------------------------------------------------------------
+
+
+async def _update(
+    session: SessionDep,
+    api_key: ApiKeyDep,
+    model: type[SQLModel],
+    item_id: str,
+    data: SQLModel,
+    label: str,
+) -> SQLModel:
+    item = await get_item_or_404(session, model, item_id, label)
+    check_ownership(item, api_key)
+    return await update_item(session, item, data)
 
 
 # ---------------------------------------------------------------------------
@@ -65,22 +102,19 @@ async def list_pedidos(
     categoria: str | None = None,
     status: str | None = None,
 ) -> PedidoList:
-    q = select(Pedido)
-    if portal_id:
-        q = q.where(Pedido.portal_id == portal_id)
-    if cidade:
-        q = q.where(Pedido.cidade.ilike(f"%{cidade}%"))  # type: ignore[union-attr]
-    if categoria:
-        q = q.where(Pedido.categoria.ilike(f"%{categoria}%"))  # type: ignore[union-attr]
-    if status:
-        q = q.where(Pedido.status == status)
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(Pedido.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        Pedido,
+        filters=_build_filters(
+            _eq(Pedido.portal_id, portal_id),
+            _ilike(Pedido.cidade, cidade),
+            _ilike(Pedido.categoria, categoria),
+            _eq(Pedido.status, status),
+        ),
+        order_col=Pedido.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return PedidoList(data=items, count=count)
 
 
@@ -88,54 +122,21 @@ async def list_pedidos(
 async def create_pedido(
     session: SessionDep, api_key: ApiKeyDep, data: PedidoCreate
 ) -> Pedido:
-    item = Pedido(
-        id=_user_id(api_key.slug, "pedido", data.cidade),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, Pedido, api_key, data, cidade=data.cidade)
 
 
 @router.put("/pedidos/{item_id}")
 async def update_pedido(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate
 ) -> Pedido:
-    item = await session.get(Pedido, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Pedido, item_id, data, "Pedido")
 
 
 @router.patch("/pedidos/{item_id}")
 async def patch_pedido(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PedidoUpdate
 ) -> Pedido:
-    item = await session.get(Pedido, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Pedido, item_id, data, "Pedido")
 
 
 # ---------------------------------------------------------------------------
@@ -153,20 +154,18 @@ async def list_voluntarios(
     cidade: str | None = None,
     categoria: str | None = None,
 ) -> VoluntarioList:
-    q = select(Voluntario)
-    if portal_id:
-        q = q.where(Voluntario.portal_id == portal_id)
-    if cidade:
-        q = q.where(Voluntario.cidade.ilike(f"%{cidade}%"))  # type: ignore[union-attr]
-    if categoria:
-        q = q.where(Voluntario.categoria.ilike(f"%{categoria}%"))  # type: ignore[union-attr]
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(Voluntario.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        Voluntario,
+        filters=_build_filters(
+            _eq(Voluntario.portal_id, portal_id),
+            _ilike(Voluntario.cidade, cidade),
+            _ilike(Voluntario.categoria, categoria),
+        ),
+        order_col=Voluntario.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return VoluntarioList(data=items, count=count)
 
 
@@ -174,54 +173,21 @@ async def list_voluntarios(
 async def create_voluntario(
     session: SessionDep, api_key: ApiKeyDep, data: VoluntarioCreate
 ) -> Voluntario:
-    item = Voluntario(
-        id=_user_id(api_key.slug, "voluntario", data.cidade),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, Voluntario, api_key, data, cidade=data.cidade)
 
 
 @router.put("/voluntarios/{item_id}")
 async def update_voluntario(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate
 ) -> Voluntario:
-    item = await session.get(Voluntario, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Voluntário não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Voluntario, item_id, data, "Voluntário")
 
 
 @router.patch("/voluntarios/{item_id}")
 async def patch_voluntario(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: VoluntarioUpdate
 ) -> Voluntario:
-    item = await session.get(Voluntario, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Voluntário não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Voluntario, item_id, data, "Voluntário")
 
 
 # ---------------------------------------------------------------------------
@@ -239,20 +205,18 @@ async def list_pontos(
     cidade: str | None = None,
     tipo: str | None = None,
 ) -> PontoAjudaList:
-    q = select(PontoAjuda)
-    if portal_id:
-        q = q.where(PontoAjuda.portal_id == portal_id)
-    if cidade:
-        q = q.where(PontoAjuda.cidade.ilike(f"%{cidade}%"))  # type: ignore[union-attr]
-    if tipo:
-        q = q.where(PontoAjuda.tipo == tipo)
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(PontoAjuda.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        PontoAjuda,
+        filters=_build_filters(
+            _eq(PontoAjuda.portal_id, portal_id),
+            _ilike(PontoAjuda.cidade, cidade),
+            _eq(PontoAjuda.tipo, tipo),
+        ),
+        order_col=PontoAjuda.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return PontoAjudaList(data=items, count=count)
 
 
@@ -260,54 +224,21 @@ async def list_pontos(
 async def create_ponto(
     session: SessionDep, api_key: ApiKeyDep, data: PontoAjudaCreate
 ) -> PontoAjuda:
-    item = PontoAjuda(
-        id=_user_id(api_key.slug, "ponto", data.cidade),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, PontoAjuda, api_key, data, cidade=data.cidade)
 
 
 @router.put("/pontos/{item_id}")
 async def update_ponto(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate
 ) -> PontoAjuda:
-    item = await session.get(PontoAjuda, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, PontoAjuda, item_id, data, "Ponto de ajuda")
 
 
 @router.patch("/pontos/{item_id}")
 async def patch_ponto(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PontoAjudaUpdate
 ) -> PontoAjuda:
-    item = await session.get(PontoAjuda, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Ponto de ajuda não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, PontoAjuda, item_id, data, "Ponto de ajuda")
 
 
 # ---------------------------------------------------------------------------
@@ -326,75 +257,39 @@ async def list_pets(
     tipo: str | None = None,
     especie: str | None = None,
 ) -> PetList:
-    q = select(Pet)
-    if portal_id:
-        q = q.where(Pet.portal_id == portal_id)
-    if cidade:
-        q = q.where(Pet.cidade.ilike(f"%{cidade}%"))  # type: ignore[union-attr]
-    if tipo:
-        q = q.where(Pet.tipo == tipo)
-    if especie:
-        q = q.where(Pet.especie.ilike(f"%{especie}%"))  # type: ignore[union-attr]
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(Pet.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        Pet,
+        filters=_build_filters(
+            _eq(Pet.portal_id, portal_id),
+            _ilike(Pet.cidade, cidade),
+            _eq(Pet.tipo, tipo),
+            _ilike(Pet.especie, especie),
+        ),
+        order_col=Pet.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return PetList(data=items, count=count)
 
 
 @router.post("/pets", status_code=201)
 async def create_pet(session: SessionDep, api_key: ApiKeyDep, data: PetCreate) -> Pet:
-    item = Pet(
-        id=_user_id(api_key.slug, "pet", data.cidade),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, Pet, api_key, data, cidade=data.cidade)
 
 
 @router.put("/pets/{item_id}")
 async def update_pet(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate
 ) -> Pet:
-    item = await session.get(Pet, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Pet não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Pet, item_id, data, "Pet")
 
 
 @router.patch("/pets/{item_id}")
 async def patch_pet(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: PetUpdate
 ) -> Pet:
-    item = await session.get(Pet, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Pet não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Pet, item_id, data, "Pet")
 
 
 # ---------------------------------------------------------------------------
@@ -412,20 +307,18 @@ async def list_feed(
     tipo: str | None = None,
     urgente: bool | None = None,
 ) -> FeedItemList:
-    q = select(FeedItem)
-    if portal_id:
-        q = q.where(FeedItem.portal_id == portal_id)
-    if tipo:
-        q = q.where(FeedItem.tipo == tipo)
-    if urgente is not None:
-        q = q.where(FeedItem.urgente == urgente)
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(FeedItem.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        FeedItem,
+        filters=_build_filters(
+            _eq(FeedItem.portal_id, portal_id),
+            _eq(FeedItem.tipo, tipo),
+            _eq(FeedItem.urgente, urgente),
+        ),
+        order_col=FeedItem.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return FeedItemList(data=items, count=count)
 
 
@@ -433,54 +326,21 @@ async def list_feed(
 async def create_feed_item(
     session: SessionDep, api_key: ApiKeyDep, data: FeedItemCreate
 ) -> FeedItem:
-    item = FeedItem(
-        id=_user_id(api_key.slug, "feed"),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, FeedItem, api_key, data)
 
 
 @router.put("/feed/{item_id}")
 async def update_feed_item(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate
 ) -> FeedItem:
-    item = await session.get(FeedItem, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item de feed não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, FeedItem, item_id, data, "Item de feed")
 
 
 @router.patch("/feed/{item_id}")
 async def patch_feed_item(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: FeedItemUpdate
 ) -> FeedItem:
-    item = await session.get(FeedItem, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item de feed não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, FeedItem, item_id, data, "Item de feed")
 
 
 # ---------------------------------------------------------------------------
@@ -497,18 +357,17 @@ async def list_outros(
     portal_id: str | None = None,
     tipo: str | None = None,
 ) -> OutroList:
-    q = select(Outro)
-    if portal_id:
-        q = q.where(Outro.portal_id == portal_id)
-    if tipo:
-        q = q.where(Outro.tipo == tipo)
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(Outro.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        Outro,
+        filters=_build_filters(
+            _eq(Outro.portal_id, portal_id),
+            _eq(Outro.tipo, tipo),
+        ),
+        order_col=Outro.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return OutroList(data=items, count=count)
 
 
@@ -516,58 +375,25 @@ async def list_outros(
 async def create_outro(
     session: SessionDep, api_key: ApiKeyDep, data: OutroCreate
 ) -> Outro:
-    item = Outro(
-        id=_user_id(api_key.slug, "outro"),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,  # name legível, slug é o ID
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        **data.model_dump(exclude={"portal_name"}),
-    )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await create_item(session, Outro, api_key, data)
 
 
 @router.put("/outros/{item_id}")
 async def update_outro(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate
 ) -> Outro:
-    item = await session.get(Outro, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Outro, item_id, data, "Item")
 
 
 @router.patch("/outros/{item_id}")
 async def patch_outro(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: OutroUpdate
 ) -> Outro:
-    item = await session.get(Outro, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item não encontrado")
-    if item.portal_id != api_key.slug:
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update(session, api_key, Outro, item_id, data, "Item")
 
 
 # ---------------------------------------------------------------------------
-# Eventos
+# Eventos (permissão especial: remetente OU destinatário)
 # ---------------------------------------------------------------------------
 
 
@@ -582,22 +408,19 @@ async def list_eventos(
     tipo: str | None = None,
     status: str | None = None,
 ) -> EventoList:
-    q = select(Evento)
-    if portal_id:
-        q = q.where(Evento.portal_id == portal_id)
-    if destinatario:
-        q = q.where(Evento.destinatario == destinatario)
-    if tipo:
-        q = q.where(Evento.tipo == tipo)
-    if status:
-        q = q.where(Evento.status == status)
-
-    count = (await session.exec(select(func.count()).select_from(q.subquery()))).one()
-    items = (
-        await session.exec(
-            q.order_by(col(Evento.scraped_at).desc()).offset(skip).limit(limit)
-        )
-    ).all()
+    items, count = await list_items(
+        session,
+        Evento,
+        filters=_build_filters(
+            _eq(Evento.portal_id, portal_id),
+            _eq(Evento.destinatario, destinatario),
+            _eq(Evento.tipo, tipo),
+            _eq(Evento.status, status),
+        ),
+        order_col=Evento.scraped_at,
+        skip=skip,
+        limit=limit,
+    )
     return EventoList(data=items, count=count)
 
 
@@ -605,53 +428,39 @@ async def list_eventos(
 async def create_evento(
     session: SessionDep, api_key: ApiKeyDep, data: EventoCreate
 ) -> Evento:
-    item = Evento(
-        id=_user_id(api_key.slug, "evento"),
-        portal_id=api_key.slug,
-        portal_name=data.portal_name or api_key.name,
-        portal_url=_USER_PORTAL_URL,
-        scraped_at=_now(),
-        tipo=data.tipo,
-        destinatario=data.destinatario,
-        metadados=data.metadados,
+    return await create_item(
+        session,
+        Evento,
+        api_key,
+        data,
+        extra_fields={
+            "tipo": data.tipo,
+            "destinatario": data.destinatario,
+            "metadados": data.metadados,
+        },
     )
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+
+
+async def _update_evento(
+    session: SessionDep,
+    api_key: ApiKeyDep,
+    item_id: str,
+    data: EventoUpdate,
+) -> Evento:
+    item = await get_item_or_404(session, Evento, item_id, "Evento")
+    check_ownership_or_destinatario(item, api_key)
+    return await update_item(session, item, data)
 
 
 @router.put("/eventos/{item_id}")
 async def update_evento(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: EventoUpdate
 ) -> Evento:
-    item = await session.get(Evento, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Evento não encontrado")
-    if api_key.slug not in (item.portal_id, item.destinatario):
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update_evento(session, api_key, item_id, data)
 
 
 @router.patch("/eventos/{item_id}")
 async def patch_evento(
     session: SessionDep, api_key: ApiKeyDep, item_id: str, data: EventoUpdate
 ) -> Evento:
-    item = await session.get(Evento, item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Evento não encontrado")
-    if api_key.slug not in (item.portal_id, item.destinatario):
-        raise HTTPException(
-            status_code=403, detail="Sem permissão para alterar este registro"
-        )
-    item.sqlmodel_update(data.model_dump(exclude_unset=True))
-    session.add(item)
-    await session.commit()
-    await session.refresh(item)
-    return item
+    return await _update_evento(session, api_key, item_id, data)
