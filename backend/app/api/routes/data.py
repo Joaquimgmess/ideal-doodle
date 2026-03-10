@@ -50,9 +50,10 @@ router = APIRouter(tags=["data"])
 
 
 def _ilike(field, value: str | None):
-    """Retorna filtro ilike se value não for None."""
+    """Retorna filtro ilike se value não for None. Escapa wildcards do input."""
     if value:
-        return field.ilike(f"%{value}%")  # type: ignore[union-attr]
+        escaped = value.replace("%", r"\%").replace("_", r"\_")
+        return field.ilike(f"%{escaped}%")  # type: ignore[union-attr]
     return None
 
 
@@ -428,17 +429,7 @@ async def list_eventos(
 async def create_evento(
     session: SessionDep, api_key: ApiKeyDep, data: EventoCreate
 ) -> Evento:
-    return await create_item(
-        session,
-        Evento,
-        api_key,
-        data,
-        extra_fields={
-            "tipo": data.tipo,
-            "destinatario": data.destinatario,
-            "metadados": data.metadados,
-        },
-    )
+    return await create_item(session, Evento, api_key, data)
 
 
 async def _update_evento(

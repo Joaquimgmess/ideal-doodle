@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -52,7 +51,6 @@ async def create_item(
     data: SQLModel,
     *,
     cidade: str | None = None,
-    extra_fields: dict[str, Any] | None = None,
 ) -> SQLModel:
     """Cria item com metadados de portal."""
     fields = {
@@ -62,7 +60,6 @@ async def create_item(
         "portal_url": _USER_PORTAL_URL,
         "scraped_at": _now(),
         **data.model_dump(exclude={"portal_name"}),
-        **(extra_fields or {}),
     }
     item = model(**fields)
     session.add(item)
