@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 import httpx
+import sqlalchemy as sa
 import structlog
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -154,8 +155,9 @@ async def _upsert(
     update_cols = {
         c.name: stmt.excluded[c.name]
         for c in db_cls.__table__.columns
-        if c.name != "id"
+        if c.name not in ("id", "created_at", "updated_at")
     }
+    update_cols["updated_at"] = sa.func.now()
     await session.execute(
         stmt.on_conflict_do_update(index_elements=["id"], set_=update_cols)
     )
