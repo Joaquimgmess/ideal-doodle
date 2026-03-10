@@ -10,7 +10,6 @@ from app.scrapers.conta_publica import ContaPublicaScraper
 from app.scrapers.emergencia_mg import EmergenciaMgScraper
 from app.scrapers.interdicoes_jf import InterdicoesJfScraper
 from app.scrapers.mi_au_ajuda import MiAuAjudaScraper
-from app.scrapers.minas_emergencia import MinasEmergenciaScraper
 from app.scrapers.onde_doar import OndeDoarScraper
 from app.scrapers.sos_animais_mg import SosAnimaisMgScraper
 from app.scrapers.sos_minas_growberry import SosMinasGrowberryScraper
@@ -25,7 +24,6 @@ __all__ = [
     "ScraperResult",
     "ScraperStatus",
     "EmergenciaMgScraper",
-    "MinasEmergenciaScraper",
     "SosAnimaisMgScraper",
     "SosMinasGrowberryScraper",
     "SosJfOrgScraper",

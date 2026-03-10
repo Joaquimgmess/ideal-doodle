@@ -26,20 +26,3 @@ class ScraperHTTPError(ScraperError):
     ) -> None:
         self.status_code = status_code
         super().__init__(portal_id, message)
-
-
-class ScraperTimeoutError(ScraperError):
-    """Timeout ao acessar portal."""
-
-
-class ScraperParseError(ScraperError):
-    """Erro ao parsear HTML/JSON do portal."""
-
-
-# ---------------------------------------------------------------------------
-# Dados
-# ---------------------------------------------------------------------------
-
-
-class DataValidationError(SosJFError):
-    """Erro de validação de dados durante normalização ou persistência."""
