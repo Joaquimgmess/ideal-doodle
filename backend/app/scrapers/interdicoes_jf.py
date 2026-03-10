@@ -17,11 +17,7 @@ class InterdicoesJfScraper(BaseScraper):
             return data.get("data", [])
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
             interdicoes = await self.get_interdicoes()

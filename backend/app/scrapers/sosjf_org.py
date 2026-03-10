@@ -36,35 +36,35 @@ class SosJfOrgScraper(BaseScraper):
 
         return reports if reports else []
 
+    async def _get_alerts_news_split(self) -> dict[str, list[dict]]:
+        items = await self.get_alerts_and_news()
+
+        def by_date(x: dict) -> str:
+            return x.get("date", "")
+
+        return {
+            "alerts": sorted(
+                [i for i in items if i.get("id", "").startswith("alert-")],
+                key=by_date,
+                reverse=True,
+            ),
+            "news": sorted(
+                [i for i in items if i.get("id", "").startswith("news-")],
+                key=by_date,
+                reverse=True,
+            ),
+        }
+
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
-            items = await self.get_alerts_and_news()
-            result.data["alerts"] = sorted(
-                [i for i in items if i.get("id", "").startswith("alert-")],
-                key=lambda x: x.get("date", ""),
-                reverse=True,
-            )
-            result.data["news"] = sorted(
-                [i for i in items if i.get("id", "").startswith("news-")],
-                key=lambda x: x.get("date", ""),
-                reverse=True,
-            )
+            split = await self._get_alerts_news_split()
+            result.data.update(split)
         except Exception as exc:
             result.errors.append(f"alerts_news: {exc}")
             result.data["alerts"] = []
             result.data["news"] = []
 
-        try:
-            reports = await self.get_reports()
-            result.data["reports"] = reports
-        except Exception as exc:
-            result.errors.append(f"reports: {exc}")
-            result.data["reports"] = []
-
+        await self.safe_fetch(result, "reports", self.get_reports())
         return result

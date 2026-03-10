@@ -54,6 +54,31 @@ class BaseScraper(ABC):
             follow_redirects=True,
         )
 
+    def create_result(self) -> ScraperResult:
+        """Cria ScraperResult pré-preenchido com metadados do portal."""
+        return ScraperResult(
+            portal_id=self.portal_id,
+            portal_name=self.portal_name,
+            url=self.base_url,
+        )
+
+    async def safe_fetch(
+        self,
+        result: ScraperResult,
+        key: str,
+        coro,
+        *,
+        default: Any = None,
+    ) -> None:
+        """Executa coro e salva em result.data[key]; em caso de erro, salva default e registra erro."""
+        if default is None:
+            default = []
+        try:
+            result.data[key] = await coro
+        except Exception as exc:
+            result.errors.append(f"{key}: {exc}")
+            result.data[key] = default
+
     @abstractmethod
     async def scrape(self) -> ScraperResult:
         """Executa todos os métodos de raspagem e retorna resultado consolidado."""

@@ -28,11 +28,7 @@ class SosJfOnlineScraper(BaseScraper):
         return [p for p in pontos if p.get("neighborhood", "").lower() == needle]
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
         try:
             async with self.get_client() as client:
                 response = await client.get(API_URL)

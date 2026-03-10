@@ -123,22 +123,12 @@ class EmergenciaMgScraper(BaseScraper):
         return results
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
-
-        for method, key in [
-            (self.get_emergency_contacts, "emergency_contacts"),
-            (self.get_help_links, "help_links"),
-            (self.get_animal_shelters, "animal_shelters"),
-            (self.get_transport_volunteers, "transport_volunteers"),
+        result = self.create_result()
+        for key, method in [
+            ("emergency_contacts", self.get_emergency_contacts),
+            ("help_links", self.get_help_links),
+            ("animal_shelters", self.get_animal_shelters),
+            ("transport_volunteers", self.get_transport_volunteers),
         ]:
-            try:
-                result.data[key] = await method()
-            except Exception as exc:
-                result.errors.append(str(exc))
-                result.data[key] = []
-
+            await self.safe_fetch(result, key, method())
         return result

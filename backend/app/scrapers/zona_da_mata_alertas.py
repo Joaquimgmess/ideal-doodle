@@ -35,11 +35,7 @@ class ZonaDaMataAlertasScraper(BaseScraper):
             return response.json()
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
             alerts = await self.get_alerts()

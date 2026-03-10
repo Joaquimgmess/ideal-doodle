@@ -50,26 +50,16 @@ class AjudeJfScraper(BaseScraper):
         return response.json()
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         async with self.get_client() as client:
             for table in TABLES_WITH_CREATED_AT:
-                try:
-                    result.data[table] = await self._fetch_table(
-                        client, table, "&order=created_at.desc"
-                    )
-                except Exception as exc:
-                    result.errors.append(f"{table}: {exc}")
-                    result.data[table] = []
+                await self.safe_fetch(
+                    result,
+                    table,
+                    self._fetch_table(client, table, "&order=created_at.desc"),
+                )
             for table in TABLES_WITHOUT_CREATED_AT:
-                try:
-                    result.data[table] = await self._fetch_table(client, table)
-                except Exception as exc:
-                    result.errors.append(f"{table}: {exc}")
-                    result.data[table] = []
+                await self.safe_fetch(result, table, self._fetch_table(client, table))
 
         return result

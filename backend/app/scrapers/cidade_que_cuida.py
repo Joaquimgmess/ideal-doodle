@@ -104,59 +104,22 @@ class CidadeQueCuidaScraper(BaseScraper):
             return response.json()
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         async with self.get_client() as client:
-            try:
-                pedidos = await self._fetch_all_listings(
-                    client, "&status=eq.publicado&tipo=eq.pedido"
+            for tipo, key in [
+                ("pedido", "pedidos"),
+                ("doacao", "doacoes"),
+                ("voluntario", "voluntarios"),
+            ]:
+                await self.safe_fetch(
+                    result,
+                    key,
+                    self._fetch_all_listings(
+                        client, f"&status=eq.publicado&tipo=eq.{tipo}"
+                    ),
                 )
-                result.data["pedidos"] = pedidos
-            except Exception as exc:
-                result.errors.append(f"pedidos: {exc}")
-                result.data["pedidos"] = []
-
-            try:
-                doacoes = await self._fetch_all_listings(
-                    client, "&status=eq.publicado&tipo=eq.doacao"
-                )
-                result.data["doacoes"] = doacoes
-            except Exception as exc:
-                result.errors.append(f"doacoes: {exc}")
-                result.data["doacoes"] = []
-
-            try:
-                voluntarios = await self._fetch_all_listings(
-                    client, "&status=eq.publicado&tipo=eq.voluntario"
-                )
-                result.data["voluntarios"] = voluntarios
-            except Exception as exc:
-                result.errors.append(f"voluntarios: {exc}")
-                result.data["voluntarios"] = []
-
-            try:
-                entidades_resp = await client.get(
-                    f"{self.SUPABASE_URL}/rest/v1/entidades?status=eq.aprovado"
-                )
-                entidades_resp.raise_for_status()
-                result.data["entidades"] = entidades_resp.json()
-            except Exception as exc:
-                result.errors.append(f"entidades: {exc}")
-                result.data["entidades"] = []
-
-            try:
-                stats_resp = await client.post(
-                    f"{self.SUPABASE_URL}/rest/v1/rpc/get_movement_stats",
-                    json={},
-                )
-                stats_resp.raise_for_status()
-                result.data["stats"] = stats_resp.json()
-            except Exception as exc:
-                result.errors.append(f"stats: {exc}")
-                result.data["stats"] = {}
+            await self.safe_fetch(result, "entidades", self.get_entidades())
+            await self.safe_fetch(result, "stats", self.get_stats(), default={})
 
         return result

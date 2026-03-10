@@ -91,11 +91,7 @@ class SosAnimaisMgScraper(BaseScraper):
             return await self._fetch_posts(client, filters)
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
         try:
             async with self.get_client() as client:
                 lost = await self._fetch_posts(

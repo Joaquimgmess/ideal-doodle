@@ -268,11 +268,7 @@ class MinasEmergenciaScraper(BaseScraper):
         return await self.get_pontos_cidade("cataguases")
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
         all_pontos: list[dict[str, Any]] = []
 
         for city_slug in CITIES:

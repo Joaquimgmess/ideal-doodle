@@ -44,25 +44,22 @@ class MiAuAjudaScraper(BaseScraper):
                 client, "pets", "&status=eq.buscando&order=created_at.desc"
             )
 
-    async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+    async def _fetch_clean(
+        self, client: httpx.AsyncClient, table: str, params: str
+    ) -> list[dict]:
+        data = await self._fetch_table(client, table, params)
+        for item in data:
+            item.pop("token_edicao", None)
+        return data
 
+    async def scrape(self) -> ScraperResult:
+        result = self.create_result()
         async with self.get_client() as client:
             for table, params, key in [
                 ("acolhedores", "&ativo=eq.true&order=created_at.desc", "acolhedores"),
                 ("pets", "&status=eq.buscando&order=created_at.desc", "pets"),
             ]:
-                try:
-                    data = await self._fetch_table(client, table, params)
-                    for item in data:
-                        item.pop("token_edicao", None)
-                    result.data[key] = data
-                except Exception as exc:
-                    result.errors.append(f"{key}: {exc}")
-                    result.data[key] = []
-
+                await self.safe_fetch(
+                    result, key, self._fetch_clean(client, table, params)
+                )
         return result

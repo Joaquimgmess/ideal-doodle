@@ -56,11 +56,7 @@ class SosMinasGrowberryScraper(BaseScraper):
         return list(seen.values())
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         pedidos, all_voluntarios = await asyncio.gather(
             self.get_pedidos(),

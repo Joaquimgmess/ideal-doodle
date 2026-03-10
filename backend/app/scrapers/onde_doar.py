@@ -101,24 +101,7 @@ class OndeDoarScraper(BaseScraper):
         return self._extract_rsc_generic(html, "descricao")
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
-
-        try:
-            points = await self.get_donation_points()
-            result.data["donation_points"] = points
-        except Exception as exc:
-            result.errors.append(f"donation_points: {exc}")
-            result.data["donation_points"] = []
-
-        try:
-            requests = await self.get_help_requests()
-            result.data["help_requests"] = requests
-        except Exception as exc:
-            result.errors.append(f"help_requests: {exc}")
-            result.data["help_requests"] = []
-
+        result = self.create_result()
+        await self.safe_fetch(result, "donation_points", self.get_donation_points())
+        await self.safe_fetch(result, "help_requests", self.get_help_requests())
         return result

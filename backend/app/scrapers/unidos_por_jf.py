@@ -44,11 +44,7 @@ class UnidosPorJfScraper(BaseScraper):
         return await self.get_help_entries(entry_type="voluntario")
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
             entries = await self.get_help_entries()

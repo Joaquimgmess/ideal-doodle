@@ -46,11 +46,7 @@ class AjudaJfArcteiScraper(BaseScraper):
         return await self._fetch_action("listVistorias")
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         actions = ["listRequests", "listPoints", "listVolunteers", "listVistorias"]
         keys = ["requests", "points", "volunteers", "vistorias"]

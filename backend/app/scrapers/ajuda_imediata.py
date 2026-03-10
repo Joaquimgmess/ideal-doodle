@@ -69,11 +69,7 @@ class AjudaImediataScraper(BaseScraper):
         return items
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
             items = await self.get_items()

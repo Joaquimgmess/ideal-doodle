@@ -60,11 +60,7 @@ class AjudeJuizDeForaScraper(BaseScraper):
             return await self._fetch_table(client, "reports", "&order=created_at.desc")
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         async with self.get_client() as client:
             for table, params, key in [
@@ -72,10 +68,8 @@ class AjudeJuizDeForaScraper(BaseScraper):
                 ("needs", "&is_active=eq.true", "needs"),
                 ("reports", "&order=created_at.desc", "reports"),
             ]:
-                try:
-                    result.data[key] = await self._fetch_table(client, table, params)
-                except Exception as exc:
-                    result.errors.append(f"{key}: {exc}")
-                    result.data[key] = []
+                await self.safe_fetch(
+                    result, key, self._fetch_table(client, table, params)
+                )
 
         return result

@@ -184,11 +184,7 @@ class AjudeIoScraper(BaseScraper):
         return HARDCODED_SHELTERS
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         async with self.get_client() as client:
             for collection, page_size, key in [
@@ -196,14 +192,11 @@ class AjudeIoScraper(BaseScraper):
                 ("volunteer_offers", 300, "volunteer_offers"),
                 ("donation_points", 100, "donation_points"),
             ]:
-                try:
-                    result.data[key] = await self._fetch_collection(
-                        client, collection, page_size=page_size
-                    )
-                except Exception as exc:
-                    result.errors.append(f"{key}: {exc}")
-                    result.data[key] = []
+                await self.safe_fetch(
+                    result,
+                    key,
+                    self._fetch_collection(client, collection, page_size=page_size),
+                )
 
         result.data["shelters"] = HARDCODED_SHELTERS
-
         return result

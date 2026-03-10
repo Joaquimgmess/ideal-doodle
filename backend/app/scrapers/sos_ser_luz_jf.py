@@ -45,11 +45,7 @@ class SosSerLuzJfScraper(BaseScraper):
     async def scrape(self) -> ScraperResult:
         """Scraping limitado - dados ficam atrás de login NGO.
         Apenas extrai a estrutura do formulário público."""
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
+        result = self.create_result()
 
         try:
             form_info = await self.get_form_fields()

@@ -46,31 +46,8 @@ class ContaPublicaScraper(BaseScraper):
             return response.json()
 
     async def scrape(self) -> ScraperResult:
-        result = ScraperResult(
-            portal_id=self.portal_id,
-            portal_name=self.portal_name,
-            url=self.base_url,
-        )
-
-        try:
-            saldo = await self.get_saldo()
-            result.data["saldo"] = saldo
-        except Exception as exc:
-            result.errors.append(f"saldo: {exc}")
-            result.data["saldo"] = {}
-
-        try:
-            extrato = await self.get_all_extrato()
-            result.data["extrato"] = extrato
-        except Exception as exc:
-            result.errors.append(f"extrato: {exc}")
-            result.data["extrato"] = []
-
-        try:
-            registro = await self.get_registro()
-            result.data["registro"] = registro
-        except Exception as exc:
-            result.errors.append(f"registro: {exc}")
-            result.data["registro"] = {}
-
+        result = self.create_result()
+        await self.safe_fetch(result, "saldo", self.get_saldo(), default={})
+        await self.safe_fetch(result, "extrato", self.get_all_extrato())
+        await self.safe_fetch(result, "registro", self.get_registro(), default={})
         return result
