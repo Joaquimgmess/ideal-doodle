@@ -51,7 +51,7 @@ from app.scrapers import (
     UnidosPorJfScraper,
     ZonaDaMataAlertasScraper,
 )
-from app.scrapers.normalizer import normalize_all
+from app.scrapers.normalizers import normalize_all
 
 logger = structlog.stdlib.get_logger(__name__)
 

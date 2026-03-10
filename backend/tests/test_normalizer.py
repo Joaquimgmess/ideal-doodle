@@ -6,13 +6,8 @@ from datetime import datetime, timezone
 import pytest
 
 from app.scrapers.base import ScraperResult
-from app.scrapers.normalizer import (
-    _city_slug,
-    _first,
-    _geo,
-    normalize,
-    normalize_all,
-)
+from app.scrapers.normalizers import normalize, normalize_all
+from app.scrapers.normalizers.helpers import city_slug, first, geo
 
 pytestmark = pytest.mark.anyio
 
@@ -41,20 +36,20 @@ def _result(portal_id: str, data: dict) -> ScraperResult:
 class TestFirst:
     def test_returns_first_non_none(self):
         d = {"a": None, "b": "", "c": "found"}
-        assert _first(d, "a", "b", "c") == "found"
+        assert first(d, "a", "b", "c") == "found"
 
     def test_returns_default_when_all_empty(self):
         d = {"a": None, "b": ""}
-        assert _first(d, "a", "b", default="fallback") == "fallback"
+        assert first(d, "a", "b", default="fallback") == "fallback"
 
     def test_returns_default_for_missing_keys(self):
-        assert _first({}, "x", "y", default=42) == 42
+        assert first({}, "x", "y", default=42) == 42
 
     def test_returns_zero_as_valid_value(self):
-        assert _first({"a": 0}, "a") == 0
+        assert first({"a": 0}, "a") == 0
 
     def test_returns_false_as_valid_value(self):
-        assert _first({"a": False}, "a") is False
+        assert first({"a": False}, "a") is False
 
 
 # ---------------------------------------------------------------------------
@@ -65,22 +60,22 @@ class TestFirst:
 class TestGeo:
     def test_valid_floats(self):
         d = {"lat": -21.76, "lng": -43.35}
-        assert _geo(d) == (-21.76, -43.35)
+        assert geo(d) == (-21.76, -43.35)
 
     def test_string_floats(self):
         d = {"latitude": "-21.76", "longitude": "-43.35"}
-        assert _geo(d) == (-21.76, -43.35)
+        assert geo(d) == (-21.76, -43.35)
 
     def test_missing_returns_none(self):
-        assert _geo({}) == (None, None)
+        assert geo({}) == (None, None)
 
     def test_invalid_returns_none(self):
         d = {"lat": "abc", "lng": "def"}
-        assert _geo(d) == (None, None)
+        assert geo(d) == (None, None)
 
     def test_partial_valid(self):
         d = {"lat": "-21.76"}
-        lat, lng = _geo(d)
+        lat, lng = geo(d)
         assert lat == -21.76
         assert lng is None
 
@@ -93,13 +88,13 @@ class TestGeo:
 class TestCitySlug:
     def test_normal_city(self):
         d = {"cidade": "Juiz de Fora"}
-        assert _city_slug(d, "cidade") == "juiz_de_fora"
+        assert city_slug(d, "cidade") == "juiz_de_fora"
 
     def test_fallback(self):
-        assert _city_slug({}, "cidade") == "mg"
+        assert city_slug({}, "cidade") == "mg"
 
     def test_custom_fallback(self):
-        assert _city_slug({}, "cidade", fallback="rj") == "rj"
+        assert city_slug({}, "cidade", fallback="rj") == "rj"
 
 
 # ---------------------------------------------------------------------------
