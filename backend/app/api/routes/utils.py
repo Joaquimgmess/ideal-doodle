@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 from sqlmodel import text
 
 from app.api.deps import SessionDep
@@ -13,10 +14,8 @@ async def health_check() -> dict[str, bool]:
 
 
 @router.get("/ready/")
-async def readiness_check(
-    request: Request, session: SessionDep
-) -> dict[str, bool | str]:
-    """Readiness probe — DB conectado e scheduler ativo."""
+async def readiness_check(request: Request, session: SessionDep) -> JSONResponse:
+    """Readiness probe — DB conectado e scheduler ativo. Retorna 503 se não ready."""
     checks: dict[str, bool | str] = {}
 
     # DB
@@ -31,4 +30,5 @@ async def readiness_check(
     scheduler = getattr(request.app.state, "scheduler", None)
     checks["scheduler"] = bool(scheduler and scheduler.running)
 
-    return checks
+    ready = all(v is True for v in checks.values() if isinstance(v, bool))
+    return JSONResponse(content=checks, status_code=200 if ready else 503)

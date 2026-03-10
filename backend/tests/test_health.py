@@ -16,7 +16,8 @@ async def test_health_check(client: AsyncClient):
 
 async def test_readiness_check(client: AsyncClient):
     response = await client.get(f"{API}/utils/ready/")
-    assert response.status_code == 200
     data = response.json()
     assert data["db"] is True
-    assert "scheduler" in data
+    # Scheduler não roda no test client, então retorna False → 503
+    assert data["scheduler"] is False
+    assert response.status_code == 503
