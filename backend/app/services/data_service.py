@@ -106,6 +106,7 @@ async def update_item(
 ) -> SQLModel:
     """Aplica update (PUT ou PATCH) e persiste."""
     item.sqlmodel_update(data.model_dump(exclude_unset=True))  # type: ignore[attr-defined]
+    item.updated_at = _now()  # type: ignore[attr-defined]
     session.add(item)
     await session.commit()
     await session.refresh(item)
