@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import EmailStr
 from sqlalchemy import ARRAY, Column, DateTime, Text
@@ -484,11 +484,27 @@ class KPIHistoryList(SQLModel):
 # Solicitação (robô WhatsApp)
 # ---------------------------------------------------------------------------
 
+IncidentPriority = Literal["CRITICA", "ALTA", "MEDIA", "BAIXA"]
+
+EmergencyService = Literal[
+    "Defesa Civil",
+    "Direitos Humanos",
+    "Desenvolvimento Social",
+    "Assistência Social",
+    "EMCASA",
+    "Defesa Animal",
+    "Canil Municipal",
+    "Procon",
+    "Secretaria de Comunicação",
+]
+
 
 class Solicitacao(SQLModel, table=True):
     __tablename__ = "solicitacao"
 
     uid: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    portal_id: str = Field(index=True)
+    portal_name: str
     categoria: str
     prioridade: str = Field(index=True)  # CRITICA | ALTA | MEDIA | BAIXA
     bairro: str
@@ -509,9 +525,9 @@ class Solicitacao(SQLModel, table=True):
 
 class SolicitacaoCreate(SQLModel):
     categoria: str
-    prioridade: str  # CRITICA | ALTA | MEDIA | BAIXA
+    prioridade: IncidentPriority
     bairro: str
-    orgao_responsavel: str
+    orgao_responsavel: EmergencyService
     descricao_resumida: str
     pessoas_afetadas: int = 0
     animais_afetados: int = 0

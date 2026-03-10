@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlmodel import col, func, select
 
 from app.api.deps import ApiKeyDep, SessionDep
@@ -9,9 +9,13 @@ router = APIRouter(tags=["robo-whatsapp"])
 
 @router.post("/robo-whatsapp", status_code=201)
 async def create_solicitacao(
-    session: SessionDep, _api_key: ApiKeyDep, data: SolicitacaoCreate
+    session: SessionDep, api_key: ApiKeyDep, data: SolicitacaoCreate
 ) -> Solicitacao:
-    item = Solicitacao(**data.model_dump())
+    item = Solicitacao(
+        portal_id=api_key.slug,
+        portal_name=api_key.name,
+        **data.model_dump(),
+    )
     session.add(item)
     await session.commit()
     await session.refresh(item)
@@ -43,3 +47,13 @@ async def list_solicitacoes(
         )
     ).all()
     return SolicitacaoList(data=items, count=count)
+
+
+@router.get("/robo-whatsapp/{uid}")
+async def get_solicitacao(
+    session: SessionDep, _api_key: ApiKeyDep, uid: str
+) -> Solicitacao:
+    item = await session.get(Solicitacao, uid)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    return item
