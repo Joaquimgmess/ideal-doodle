@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import EmailStr
 from sqlalchemy import ARRAY, Column, DateTime, Text
@@ -86,18 +86,6 @@ class Token(SQLModel):
 
 class TokenPayload(SQLModel):
     sub: str | None = None
-
-
-# ---------------------------------------------------------------------------
-# Generic
-# ---------------------------------------------------------------------------
-
-T = TypeVar("T")
-
-
-class PaginatedList(SQLModel, Generic[T]):
-    data: list[T]
-    count: int
 
 
 # ---------------------------------------------------------------------------
@@ -380,7 +368,9 @@ class EventoUpdate(SQLModel):
     metadados: dict[str, Any] | None = None
 
 
-EventoList = PaginatedList[Evento]
+class EventoList(SQLModel):
+    data: list[Evento]
+    count: int
 
 
 # ---------------------------------------------------------------------------
@@ -412,12 +402,35 @@ class ApiKey(SQLModel, table=True):
 # Respostas de listagem tipadas
 # ---------------------------------------------------------------------------
 
-PedidoList = PaginatedList[Pedido]
-VoluntarioList = PaginatedList[Voluntario]
-PontoAjudaList = PaginatedList[PontoAjuda]
-PetList = PaginatedList[Pet]
-FeedItemList = PaginatedList[FeedItem]
-OutroList = PaginatedList[Outro]
+
+class PedidoList(SQLModel):
+    data: list[Pedido]
+    count: int
+
+
+class VoluntarioList(SQLModel):
+    data: list[Voluntario]
+    count: int
+
+
+class PontoAjudaList(SQLModel):
+    data: list[PontoAjuda]
+    count: int
+
+
+class PetList(SQLModel):
+    data: list[Pet]
+    count: int
+
+
+class FeedItemList(SQLModel):
+    data: list[FeedItem]
+    count: int
+
+
+class OutroList(SQLModel):
+    data: list[Outro]
+    count: int
 
 
 # ---------------------------------------------------------------------------
@@ -462,4 +475,6 @@ class KPIHistoryPublic(SQLModel):
     data_registro: datetime
 
 
-KPIHistoryList = PaginatedList[KPIHistoryPublic]
+class KPIHistoryList(SQLModel):
+    data: list[KPIHistoryPublic]
+    count: int
